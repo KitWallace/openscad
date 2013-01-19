@@ -11,7 +11,7 @@ module heart(size,thickness,height) {
    linear_extrude(height=height) 
           minkowski() {
                heart_shape(size);
-               circle(thickness);
+               circle(thickness+0.1);
         }
 }
 
@@ -25,7 +25,7 @@ module heart_box(size,height,thickness,clearance) {
 module heart_lid(size,thickness,depth,clearance) {
   union()  {
         heart(size,thickness+clearance,thickness);
-        translate([0,0,thickness]) heart(size,0.1, depth); 
+        translate([0,0,thickness]) heart(size,0, depth); 
   }
 }
  
