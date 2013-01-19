@@ -38,4 +38,4 @@ module heart_thing(size,height,thickness,depth,clearance) {
   }
 }
 
-heart_thing(20,10,3,5,0.5);
+heart_thing(20,12,3,4,0.5);
