@@ -1,15 +1,15 @@
-module box() {
-    cube([2,2,1], center = true); 
+module box(size) {
+    cube([2*size, 2*size, size], center = true); 
 }
 
-module dodecahedron() {
+module dodecahedron(size) {
       dihedral = 116.565;
       intersection(){
-            box();
+            box(size);
             intersection_for(i=[1:5])  { 
-                rotate([dihedral, 0, 360 / 5 * i])  box(); 
+                rotate([dihedral, 0, 360 / 5 * i])  box(size); 
            }
       }
 }
 
-scale(10) dodecahedron();
+dodecahedron(20);
