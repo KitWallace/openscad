@@ -90,7 +90,7 @@ dotWidth= 2.34;
 charWidth = 6.2;
 lineHeight = 12;  // check this 
 
-text = ["Welcome abouard","Aremiti"]; 
+text = ["Welcome aboard","Aremiti"]; 
 
 // text = ["All human beings are born", "free and equal in dignity and", "rights. They are endowed with", "reason and conscience and", "should act towards one another", "in a spirit of brotherhood."]; 
 
