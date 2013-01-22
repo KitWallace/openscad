@@ -83,7 +83,7 @@ $dotBase = 1.44;
 $dotRadius = $dotBase /2;
 $dotWidth= 2.34;
 $charWidth = 6.2;
-$lineHeight = 12;  // check this 
+$lineHeight = 10; 
 
 // compute the sphere to make the raised dot
 $dotSphereRadius  =  chord_radius($dotBase,$dotHeight);
