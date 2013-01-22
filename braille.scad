@@ -22,7 +22,7 @@
 
 
 function max_length_r(v, i, max) =
-     i == len(v) ?  max  : ( len(v[i]) >max ?  max_length_r(v, i+1, len(v[i])) : max_length_r(v, i+1, max) );
+     i == len(v) ? max : max_length_r(v, i+1, len(v[i]) > max ? len(v[i]) : max);
 
 function max_length(v) = max_length_r(v,0,0);
 
