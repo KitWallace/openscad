@@ -68,15 +68,16 @@ module drawText(text) {
 module label(text, depth=2) {
      assign(width =( max_length(text) + 2)  * $charWidth,
                  height = len(text)  * $lineHeight )
+ 
      difference () {
         union() {
             translate([0, $lineHeight/3, 0])
                 cube([width,height, depth], true);
            drawText(text);
           }
-
-        translate([width/2-3 ,height-$lineHeight,-5]) cylinder(r=1,h=10);
-        translate([-(width/2-3) ,height-$lineHeight,-5]) cylinder(r=1,h=10);   }
+         translate([width/2-3 ,height-4,-5]) cylinder(r=1,h=10);
+         translate([-(width/2-3) ,height-4,-5]) cylinder(r=1,h=10);  
+    }
 }
 
 $fa = 0.01; $fs = 0.5; 
@@ -96,7 +97,7 @@ $lineHeight = 11;
 $dotSphereRadius  =  chord_radius($dotBase,$dotHeight);
 $dotSphereOffset =$dotSphereRadius - $dotHeight;
 
-text = ["Hello","Sailor"]; 
+text = ["Aremiti"]; 
 
 // text = ["All human beings are born", "free and equal in dignity and", "rights. They are endowed with", "reason and conscience and", "should act towards one another", "in a spirit of brotherhood."]; 
 
