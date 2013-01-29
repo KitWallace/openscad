@@ -10,8 +10,7 @@ module arch(x,y,r) {
 
 
 module ogive_arch(width,height,sharpness) {
-  assign(base=width/2)
-  assign(length = base * sharpness)
+  assign(base=width/2, length = width * sharpness)
   assign(radius = (base * base + length * length) / (2 * base))
   assign(x= radius - base,y = height-length)
      arch(x,y,radius);
@@ -38,7 +37,6 @@ module variable_nested_archway (width,height,sharpness,thickness,depth,n) {
   union() {
        for (i=[0:n-1]) {
        assign(dt =  v_sum(thickness,i+1) ) {
-          echo(dt); 
           ogive_solid_archway(width + 2 * dt, height+ dt, sharpness,thickness[i],depth[i]);
       }
     }
@@ -51,7 +49,8 @@ module remove_ground() {
      translate([0,-49.9,0]) cube([100,100,100],center=true);
   }
 }
-$fa = 0.01; $fs = 2; 
+$fa = 0.01; $fs = 0.5; 
 
 remove_ground() 
-    variable_nested_archway(15,30,1.5,[2,5,2,1],[1,3,4,5],4);
+    variable_nested_archway(15,30,0.8,[2,4,2,4],[1,3,5,7],4);
+   
