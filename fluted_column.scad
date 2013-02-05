@@ -1,22 +1,15 @@
 $fa = 0.01; $fs =2; 
 pi = 3.14159265359;
-$max=210;
 function v_sum_r(v,n,k) =
       k > n ? 0 : v[k] + v_sum_r(v,n,k+1);
 
 function v_sum(v,n) = v_sum_r(v,n-1,0);
 
-module remove_ground() {
-     difference() {
-         child(0);
-         translate([0,0,-$max]) cube (2*$max,center=true);
-    }
-}
-
 module facade () {
+    assign (max=200)
     difference()  {  
          rotate([0,90,0])  child(0);
-         translate([0,0,-$max]) cube (2*$max,center=true);
+         translate([max-1,0,-max]) cube (2*max,center=true);
     }
 }
 
@@ -142,6 +135,7 @@ module stack (separations) {
 
 // a 20 sided straight fluted column with an attic base, and doric capital
 
+module column() {
 stack( [0,6,5,1,4,1,4,0.5,0.5,0.5,185,1,5,1,3]) {
 // first an attic base 
    slab(20,6);
@@ -163,6 +157,7 @@ stack( [0,6,5,1,4,1,4,0.5,0.5,0.5,185,1,5,1,3]) {
 // the abacus
    slab(17,4);  
   }
+}
 
-
+facade() column();
 
