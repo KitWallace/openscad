@@ -63,7 +63,7 @@ module tapered_column(r1,r2,height) {
 module tapered_fluted_column(r1,r2,height,nflutes=20,arris=0,caps=0,delta=0.2) {
     assign(flute_r1 = (1 - arris) *  pi * r1  / nflutes,
                flute_r2 = (1 - arris) * pi * r2  / nflutes, 
-               taper = taper(r1,r2,height)
+               taper = atan((r1-r2)/height)
               )
       {
         echo("flute_r1",flute_r1,"flute_r2",flute_r2); 
