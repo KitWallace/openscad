@@ -1,12 +1,12 @@
 $fa = 0.01; $fs =2; 
 pi = 3.14159265359;
+max=200;
 function v_sum_r(v,n,k) =
       k > n ? 0 : v[k] + v_sum_r(v,n,k+1);
 
 function v_sum(v,n) = v_sum_r(v,n-1,0);
 
 module facade () {
-    assign (max=200)
     difference()  {  
          rotate([0,90,0])  child(0);
          translate([max-1,0,-max]) cube (2*max,center=true);
@@ -14,12 +14,13 @@ module facade () {
 }
 
 module bottom(x) {
-      difference() {
+     difference() {
           child(0);
           translate([0,0,$max+x]) cube(2*$max,center=true);
    
   }
 }
+
 module top(x) {
       difference() {
           translate([0,0,-x]) child(0);
