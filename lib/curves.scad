@@ -37,7 +37,7 @@ module epitrochoid(R, r, d, n=100,rev=1) {
 // see http://en.wikipedia.org/wiki/Epitrochoid
 //        http://en.wikipedia.org/wiki/Epicycloid
 
-//  r=d  > epicycloid 
+// r=d  > epicycloid 
 // r=d and R=r  > cardiod
 // parametric equations :
     function x(R,r,a) = (R+r)*cos(a) - d*cos((R+r)/r*a);
@@ -48,7 +48,7 @@ module epitrochoid(R, r, d, n=100,rev=1) {
                   [
                    [0,0], 
                    [x(R,r,dth*i), y(R,r,dth*i)], 
-	             [x(R,r,dth*(i+1)),  y(R,r,dth*(i+1))]
+	           [x(R,r,dth*(i+1)),  y(R,r,dth*(i+1))]
                   ]
             );
 }
@@ -93,6 +93,29 @@ module rose(R, k, n=100,rev=1) {
 }
 
 * linear_extrude(height=20)  rose (10,0.5,rev=2,n=300);
+
+module rose_outline(R, k,f, n=100,rev=1) {
+// see http://en.wikipedia.org/wiki/Rose_%28mathematics%29
+// parametric equations :
+    function x(R,k,a) = R*cos(k*a) * sin(a);
+    function y(R,k,a) = R*cos(k*a) * cos(a);   
+
+// generate curve by sectors
+    assign(dth = rev*360/n)
+	for (i = [0:n-1] ) 
+            polygon( 
+                [
+                   [x(R,k,dth*i) * f, y(R,k,dth*i) * f], 
+                   [x(R,k,dth*i), y(R,k,dth*i)], 
+	           [x(R,k,dth*(i+1)), y(R,k,dth*(i+1))],
+                   [x(R,k,dth*(i+1)) * f, y(R,k,dth*(i+1)) * f]
+                ]
+            );
+}
+
+
+* linear_extrude(height=4)  
+    rose_outline (10,4,f=0.90, rev=2,n=300);
 
 module circle_involute(R, f, n=50,rev=1) {
 // see http://en.wikipedia.org/wiki/
