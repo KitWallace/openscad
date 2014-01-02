@@ -1,0 +1,28 @@
+
+module savoy(s) {
+  scale(s) translate([-20,-70,0])import("savoy.dxf");
+};
+
+module base (size,thickness) {
+  linear_extrude(height=thickness,complexity=10)  
+       minkowski() { savoy(size);  circle(r=thickness); };
+};
+
+module sides(size, height, thickness) {
+  linear_extrude(height=height,complexity=10)  
+    difference() {
+       minkowski() { savoy(size);  circle(r=thickness); }
+       savoy(size);
+    }
+};
+
+module vase(size_bottom,size_top,height,step, thickness) {
+   base(size_bottom,thickness);
+   for (z = [0:step:height]) {
+     assign( size = size_bottom + (size_top - size_bottom) * z /height) 
+      translate([0,0,z])
+       sides (size,step,thickness);
+   }
+};
+
+vase(0.3,0.38,40,0.2,2);
