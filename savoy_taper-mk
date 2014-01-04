@@ -19,10 +19,10 @@ module wall(size, thickness) {
   }
 }
 
-module vase(size_bottom, scale, height, thickness) {
-   base(size_bottom,thickness);
+module vase(size, scale, height, thickness) {
+   base(size,thickness);
    linear_extrude(height=height, scale=scale) {
-     wall(size_bottom,thickness);
+     wall(size,thickness);
    }
 };
 
