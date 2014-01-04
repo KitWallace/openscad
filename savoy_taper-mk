@@ -1,0 +1,29 @@
+module savoy(s) {
+  scale(s) translate([-20,-70,0]) import("savoy.dxf");
+}
+
+module outer(size, thickness) {
+  minkowski() { savoy(size); circle(r=thickness); }
+}
+
+module base(size, thickness) {
+  linear_extrude(height=thickness,complexity=10) {
+    outer(size, thickness);
+  }
+}
+
+module wall(size, thickness) {
+  difference() {
+    outer(size, thickness);
+    savoy(size);
+  }
+}
+
+module vase(size_bottom, scale, height, thickness) {
+   base(size_bottom,thickness);
+   linear_extrude(height=height, scale=scale) {
+     wall(size_bottom,thickness);
+   }
+};
+
+vase(0.3,1.3,40,2);
