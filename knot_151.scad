@@ -67,7 +67,7 @@ function loop_faces(segs, i = 0) =
         : [];
 /*
 // 3_1 tritangentless conformation 
-// http://blms.oxfordjournals.org/content/23/1/78.full.pdf
+// http://blms.oxfordjournals.org/content/23/1/78.full.pdf   (pay-walled)
 a = 0.8;
 b = sqrt (1 - a * a);
 function f(t) =  
@@ -78,7 +78,7 @@ function f(t) =
 */  
 
 // trefoil 32 as Fourier-(1,1,2)
-// http://arxiv.org/pdf/0708.3590v1.pdf  (paywalled)
+// http://arxiv.org/pdf/0708.3590v1.pdf 
 // note torus knots are not Lissajous (1,1,1)
 
 function f(t) = 
