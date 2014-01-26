@@ -84,7 +84,7 @@ function f(t) =
 function f(t) = 
 [ 1.3*cos(3*t), 
   1.5*cos(2*t + 30), 
-  (1.3*cos(3*t + 90) + .9*cos(-t + 30*2 - 45/2))
+  1.3*cos(3*t + 90) + .9*cos(-t + 30*2 - 45/2)
 ];
 
 // create the knot with given radius and step
