@@ -44,12 +44,14 @@ function loop_points(step, t = 0) =
        : [] ;
 
 function transform_points(list, matrix, i = 0) = 
-    i < len(list) ? concat([ transform(list[i], matrix) ], transform_points(list, matrix, i + 1)) : [];
+    i < len(list) 
+       ? concat([ transform(list[i], matrix) ], transform_points(list, matrix, i + 1)) 
+       : [];
 
 function tube_points(loop, i = 0) = 
     (i < len(loop) - 1)
-     ?  concat(transform_points(circle_points, disc(loop[i], (loop[i + 1] - loop[i])/ 2)), tube_points(loop, i + 1)) 
-     : transform_points(circle_points, disc(loop[i], (loop[0] - loop[i])/ 2)) ;
+       ?  concat(transform_points(circle_points, disc(loop[i], (loop[i + 1] - loop[i])/ 2)), tube_points(loop, i + 1)) 
+       : transform_points(circle_points, disc(loop[i], (loop[0] - loop[i])/ 2)) ;
 
 function tube_faces(segs, facets, s, i = 0) =
      i < facets  
