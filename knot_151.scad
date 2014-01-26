@@ -78,7 +78,7 @@ function f(t) =
 */  
 
 // trefoil 32 as Fourier-(1,1,2)
-// http://arxiv.org/pdf/0708.3590v1.pdf
+// http://arxiv.org/pdf/0708.3590v1.pdf  (paywalled)
 // note torus knots are not Lissajous (1,1,1)
 
 function f(t) = 
