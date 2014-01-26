@@ -3,9 +3,6 @@
 //      http://files.openscad.org/OpenSCAD-2014.01.14-x86-32-Installer.exe
 // with concat enabled  in edit/preferences/features 
 // function parameters moved to global for generality
-// see http://makerhome.blogspot.co.uk/2014/01/day-151-fourier-and-tritangentless.html
-
-
 // tube must be closed with no self-intersections
 
 function m_translate(v) = [ [1, 0, 0, 0],
@@ -67,6 +64,10 @@ function loop_faces(segs, i = 0) =
      i < segs 
         ? concat(tube_faces(segs, $fn, i), loop_faces(segs, i + 1)) 
         : [];
+        
+        
+// see http://makerhome.blogspot.co.uk/2014/01/day-151-fourier-and-tritangentless.html
+
 /*
 // 3_1 tritangentless conformation 
 // http://blms.oxfordjournals.org/content/23/1/78.full.pdf   (pay-walled)
@@ -84,10 +85,10 @@ function f(t) =
 // note torus knots are not Lissajous (1,1,1)
 
 function f(t) = 
-[ 1.3*cos(3*t), 
-  1.5*cos(2*t + 30), 
-  1.3*cos(3*t + 90) + .9*cos(-t + 30*2 - 45/2)
-];
+   [ 1.3*cos(3*t), 
+     1.5*cos(2*t + 30), 
+     1.3*cos(3*t + 90) + .9*cos(-t + 30*2 - 45/2)
+   ];
 
 // create the knot with given radius and step
 r =0.2;
