@@ -1,5 +1,5 @@
 // rolling knot code with thanks to mathgrrl and nop head
-include <lib/tube.scad>
+include <tube.scad>
 
 function f(t) =   // rolling knot
    [ a * cos (3 * t) / (1 - b* sin (2 *t)),
