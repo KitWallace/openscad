@@ -1,5 +1,4 @@
-
-declare variable $local:db := "/db/apps/3d/";
+declare variable $local:db := concat("/db/",substring-before(substring-after(system:get-module-load-path(),"/db/"),"/lib"),"/");
 declare variable $local:knot-server := "http://www.colab.sfu.ca/KnotPlot/KnotServer/";
 declare variable $local:knot-page := "http://newweb.cecm.sfu.ca/cgi-bin/KnotPlot/KnotServer/kserver?knot_type=";
 declare variable $local:knot-server-full := "http://www.colab.sfu.ca/KnotPlot/KnotServer/coord/%type.html";
