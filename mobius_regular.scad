@@ -86,7 +86,7 @@ function loop_faces(segs, facets, i = 0) =
         : [];
 
 Twists = 1;
-Radius=20;
+Radius=5;
 Width=1;
 Initial_angle = 0;
 Facets= 4;  // sides of the cross-section 
@@ -105,8 +105,8 @@ function cross_section_points(t, i = 0) =
 ;
 
 function f(t) =  
-   [ R*sin(t),
-     R*cos(t),
+   [ Radius*sin(t),
+     Radius*cos(t),
      0
    ];
 
