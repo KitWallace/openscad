@@ -1,15 +1,11 @@
-
-Initial_angle = 0;
-Facets= 4;  // sides of the cross-section 
-Scale = 6;// generates Mobius strips
+// generates Mobius strips
 // based on code by nop head,  
 // requires openscad snapshot with concat enabled 
 // function parameters moved to global for generality
 
-// a circular tube with a n-sided cross-section 
-// which is rotated by Twists / n  degrees over the circle
-// allowance is required when connecting up the two ends of the tube for the 
-// rotation 
+// a circular tube with a regular N-sided cross-section 
+// which is rotated by Twists/N * 360 degrees over the circle
+// allowance is required when connecting up the two ends of the tube 
 
 
 function m_translate(v) = [ [1, 0, 0, 0],
@@ -89,9 +85,12 @@ function loop_faces(segs, facets, i = 0) =
         ? concat(tube_faces(segs, facets, i), loop_faces(segs, facets, i + 1 )) 
         : [];
 
-Twists = 2;
+Twists = 1;
 Radius=20;
 Width=1;
+Initial_angle = 0;
+Facets= 4;  // sides of the cross-section 
+Scale = 6;
 Step = 0.5;
 
 function cross_section_points(t, i = 0) = 
