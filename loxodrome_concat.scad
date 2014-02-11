@@ -1,8 +1,8 @@
-// toxodromw
+// loxodrome
 // uses open tube code 
 // orginal endless tube code by nop head
-// requires openscad snapshot  eg.
-//      http://files.openscad.org/OpenSCAD-2014.01.14-x86-32-Installer.exe
+// requires openscad development snapshot 2014-01-14 e
+//      http://www.openscad.org/downloads.html
 // with concat enabled  in edit/preferences/features 
 
 function m_translate(v) = [ [1, 0, 0, 0],
@@ -123,7 +123,7 @@ r=10;
 thickness=0.5;
 long0 = 0;
 
-section_points = circle_points(thickness, $fn=25);
+section_points = circle_points(thickness, $fn=20);  // some values will break the polyhedron
 // echo(section_points);
 translate([0,0,r + thickness])
 for (a= [0:90:270]) {
