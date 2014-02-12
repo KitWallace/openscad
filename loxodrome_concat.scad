@@ -121,13 +121,13 @@ step=10;
 r=10;
 thickness=0.5;
 long0 = 0;
-
+beta = 70;
 section_points = circle_points(thickness, $fn=20);  // some values will break the polyhedron
 // echo(section_points);
 translate([0,0,r + thickness])
 for (a= [0:90:270]) {
  rotate([0,0,a])
- assign(loop_points = loop_points(5, 500, -500, 70 ,long0, r))
+ assign(loop_points = loop_points(step, 500, -500, beta ,long0, r))
 // echo(loop_points);
  assign(tube_points = tube_points(loop_points,section_points),
 // echo(tube_points);
