@@ -93,8 +93,8 @@ e = 2.718281828;
 pi = 3.14159;
 rad = 2 * pi / 360;
 
-function sinh(x) = (1 - pow(e, -2 * x)) / (2 * pow(e, -x));
-function cosh(x) = (1 + pow(e, -2 * x)) / (2 * pow(e, -x));
+function sinh(x) = (1 - exp( -2 * x) )/ (2 * exp(-x));
+function cosh(x) = (1 + exp( -2 * x)) / (2 * exp(-x));
 function tanh(x) = sinh(x) / cosh(x);
 function cot(x) = 1 / tan(x);
 
