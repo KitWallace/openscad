@@ -89,7 +89,6 @@ function reverse_r(v,n) =
 ;
 function reverse(v) = reverse_r(v, len(v)-1);
 
-e = 2.718281828;
 pi = 3.14159;
 rad = 2 * pi / 360;
 
