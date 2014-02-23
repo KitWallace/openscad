@@ -7,6 +7,9 @@
   
   write out the config.scad 
 
+  Chris Wallace Feb 2014 
+  http://kitwallace.co.uk
+  
 """
 
 import sys, math, os
