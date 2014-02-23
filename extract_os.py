@@ -166,13 +166,12 @@ print (grid_east_tl, grid_north_tl, grid_east_br, grid_north_br)
 for north in range(grid_north_br,grid_north_tl+ 1)  :
    for east in range(grid_east_tl,grid_east_br + 1)  :
        tile = OS_to_Grid(east,north)
-       print ("// " + tile)
        h=load_tile(tile)
        tile_north_min = samples - int(min (10000, north_tl - north * 10000) / rscale)
        tile_north_max=  samples - int(max (0 , north_br -  north * 10000) / rscale )
        tile_east_max = int(min (10000, east_br - east * 10000)/ rscale)
        tile_east_min = int(max (0 , east_tl -  east * 10000) /rscale)
-       print(tile_north_min, tile_north_max, tile_east_min, tile_east_max)
+       print(tile, tile_north_min, tile_north_max, tile_east_min, tile_east_max)
        he= h[tile_north_min: tile_north_max,tile_east_min:tile_east_max]
        if (east ==grid_east_tl) :
            strip = he 
