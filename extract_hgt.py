@@ -1,11 +1,14 @@
 """
-  parameters  lat/long bounding box (top/left bottom/right) and base
-  convert to row/col limits - get decimal lat long min /max multiple y 3 and round to integer
+  command line parameters:
+       lat/long bounding box 
+       top left lat,long 
+       bottom right lat, long
+       base offset 
  
   use numpy to read in the hgt files
   extract the subarrays required, merge into a single array, add base, flip and output 
   
-  write out the config.scad 
+  stdout to config.scad 
 
   Chris Wallace Feb 2014 
   http://kitwallace.co.uk
