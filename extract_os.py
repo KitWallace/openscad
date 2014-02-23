@@ -28,11 +28,12 @@ OSletters = [
 ["","NR","NS","NT","NU"],
 ["NL","NM","NN","NO"],
 ["NF","NG","NH","NJ","NK"],
-["NA","NB","NC","ND","HW","HX"],
-["","","","","HY","HZ"],
+["NA","NB","NC","ND"],
+["","HW","HX","HY","HZ"],
 ["","","","HT","HU"],
 ["","","","","HP"]
 ]
+
 
 def OS_to_Grid(e,n) :
      e1= e//10
