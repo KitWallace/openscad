@@ -1,6 +1,5 @@
 """
   command line parameters:
-       lat/long bounding box 
        top left lat,long 
        bottom right lat, long
        base offset 
