@@ -1,6 +1,6 @@
 """
   parameters 
-      top left lat lomg
+      top left lat long
       bottom right lat long
       name of file
       base offset
