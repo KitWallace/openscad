@@ -1,6 +1,6 @@
 """
   parameters 
-      top left lat long
+      top left lat lomg
       bottom right lat long
       name of file
       base offset
@@ -34,13 +34,12 @@ OSletters = [
 ["","","","","HP"]
 ]
 
-
 def OS_to_Grid(e,n) :
      e1= e//10
      n1 =n//10
      prefix = OSletters[n1][e1]
      tile=prefix + str(e -10*e1) + str(n-10*n1)
-     return tile
+     return tile.lower()
 
 
 # Hannah Fry http://hannahfry.co.uk/2012/02/01/converting-latitude-and-longitude-to-british-national-grid/
@@ -124,15 +123,17 @@ def WGS84toOSGB36(lat, lon):
     
 def load_tile(tile) :  #return the elevation array for this tile 
    prefix = tile[:2] 
-   a = np.empty([200,200])
-   lc_prefix = prefix.lower()
-   fn="data/"+lc_prefix+"/"+tile+"_OST50GRID_20130611.zip"
-   zip = zipfile.ZipFile(fn,"r")
-   an= tile+".asc"
-   ascii = zip.read(an)
-   lines = ascii.split("\n")
-   for i in range(0,200) : 
-       a[i] = np.array(lines[i+5].split(" "))    
+   a = np.zeros([200,200])
+   fn="data/"+prefix+"/"+tile+"_OST50GRID_20130611.zip"
+   try :
+      zip = zipfile.ZipFile(fn,"r")
+      an= tile.upper()+".asc"
+      ascii = zip.read(an)
+      lines = ascii.split("\n")
+      for i in range(0,200) : 
+         a[i] = np.array(lines[i+5].split(" "))  
+   except :
+      pass
    return a  
    
 nm=1850  
@@ -184,4 +185,5 @@ for north in range(grid_north_br,grid_north_tl+ 1)  :
 surface = surface + base
 surface = flipud(surface)
 savetxt(name + ".txt",surface,"%d")
+
 
