@@ -184,5 +184,5 @@ for north in range(grid_north_br,grid_north_tl+ 1)  :
 surface = surface + base
 surface = flipud(surface)
 savetxt(name + ".txt",surface,"%d")
-
+print (surface.shape)
 
