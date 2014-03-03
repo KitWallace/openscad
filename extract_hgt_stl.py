@@ -94,7 +94,6 @@ for latd in range(lat_min_d,lat_max_d + 1)  :
    else :
        surface = vstack([strip,surface])
 surface = flipud(surface)
-surface = surface.astype(float)
 surface *= (scale * exaggeration / rscale)
 surface_to_STL(surface,[scale*cos(radians(lat_mid)),scale],base, "terrain", sys.stdout)
 
