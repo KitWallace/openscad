@@ -1,37 +1,42 @@
 /*
   create a brilliant cut diamond based on the guidance in 
      http://www.usfacetersguild.org/gem_designs/simple_brilliance/
-  with an added cullet to make a total of (1+16+8+8+16+1+16 )= 66 factes
-  grind subtracts material according to the data which sets the
-    start,increment,limit and axial angle
+  with an added cullet to make a total of (1+16+8+8+16+1+16 )= 66 facets
+  
+  function make_facets() creates the data for each facet 
+     (index_angle, axial_angle and height) 
+  based on data in the design
   e.g.
      B 	35.00 	01-03-05-07-09-11-13-15-17-19-21-23-25-27-29-31
   translates to 
-     grind(1,2,32,35..)
+     make_facets(1,2,32,35)
 
   the distance from the centre of these facets is height and 
   this is set by experimentation to make the facets follow the pattern
   (I guess they could be computed but changing them by hand retains a 
    sense of the operation of a mechanical faceting machine)
 
+  gem() then recursively creates each facet and removes it from 
+  the remainder of  the original cube
+
   thanks to nop-head and the openscad forum
 
   Kit Wallace 
 */
 
-function make_facets(start,increment,limit,angle,height) =
+function make_facets(start,increment,limit,axial_angle,height) =
     start <= limit
-      ? concat([[start/limit*360, angle, height]] ,
-               make_facets(start+increment,increment,limit,angle,height))
+      ? concat([[start/limit*360, axial_angle, height]] ,
+               make_facets(start+increment,increment,limit,axial_angle,height))
       : [] ;
 
 module body(Size=100) {
     cube(Size,center=true);
 }
 
-module cut_facet_data(index,angle,height,Width=200,Depth=50) {
-     rotate([0,0,index])
-        rotate([0,angle,0])
+module cut_facet_data(index_angle,axial_angle,height,Width=200,Depth=50) {
+     rotate([0,0,index_angle])
+        rotate([0,axial_angle,0])
            translate([0,0,Depth/2 + height])
               cube([Width,Width,Depth],center=true);
 }
@@ -64,6 +69,6 @@ function brilliant_facets() =
  ); 
 
 facets = brilliant_facets();
-echo (len(facets), facets);
+// echo (len(facets), facets);
 
 scale(3) gem(facets,len(facets));
