@@ -1,7 +1,7 @@
 /*
   create a brilliant cut diamond based on the guidance in 
      http://www.usfacetersguild.org/gem_designs/simple_brilliance/
-  with an added cullet to make a total of (1+16+8+8+16+1+16 )= 66 facets
+  with an added culet to make a total of (1+16+8+8+16+1+16 )= 66 facets
   
   function make_facets() creates the data for each facet 
      (index_angle, axial_angle and height) 
