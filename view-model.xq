@@ -36,8 +36,10 @@ init();
 </script>
         </div>
         <div>
-            {if (exists($url)) then <div>See <a href="{$url}">{$url}</a></div> else () }
-            <a href="models/{$model}.stl">Download STL</a> &#160;
+             {if (exists($url)) 
+             then <div>See <a href="{$url}">{$url}</a></div> 
+             else <a href="solid-index.xq#{$model}">Solid Index</a>
+             } &#160;             <a href="models/{$model}.stl">Download STL</a> &#160;
             <a href="http://kitwallace.co.uk">Kit Wallace</a>
         </div>
     </body>
