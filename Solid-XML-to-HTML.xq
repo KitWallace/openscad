@@ -9,10 +9,9 @@ return
     </head>
     <body>
         <h1>Polyhedra in OpenSCAD</h1>
-        <div>Based on this <a href="http://dmccooey.com/polyhedra/">Polyhedra site </a> 
-        by David McCooey from where the coordinates are obtained to generate OpenSCAD scripts.  S
-        ome polyhedra have accompanying 3-D models using generated STL.</div>
+        <div>Based on this <a href="http://dmccooey.com/polyhedra/">Polyhedra site </a> by David McCooey from where the coordinates are obtained to generate OpenSCAD scripts.  Some polyhedra have accompanying 3-D models using generated STL.</div>
         <hr/>
+
         <div>
          {for $group in $solids/group
           return
@@ -21,7 +20,7 @@ return
               {for $solid in $group/solid
                return
                   <div>
-                   {$solid/name/string()}&#160;
+                   <a name="{$solid/id}">{$solid/name/string()}</a>&#160;
                     <a href="http://dmccooey.com/polyhedra/{$solid/id}.html">Java Applet</a>&#160;
                     <a href="solid.xq?id={$solid/id}">OpenSCAD</a>&#160;
                     { if ($models = concat($solid/id,".stl")) 
