@@ -167,15 +167,14 @@ module face_holes(faces,points,scale,h) {
           face_hole(f,scale,h);
 }
 
-scale=10;
-shell_ratio=0.95;
-hole_ratio = 0.85;
+scale=20;
+shell_ratio=0.1;
+hole_ratio = 0.8;
 hole_depth=12;
 spoints = scale * points;
 
-
 difference() {
   polyhedron(spoints,faces);
-  scale(shell_ratio)  polyhedron(spoints,faces);
+  scale(1-shell_ratio)  polyhedron(spoints,faces);
   face_holes(faces,spoints,hole_ratio,hole_depth);
 }
