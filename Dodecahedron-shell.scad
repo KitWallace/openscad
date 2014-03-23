@@ -73,8 +73,7 @@ edges = [
 module locate(p1, p2) {
    assign(p = p2 - p1)
    assign(distance = norm(p)) {   
-//      echo(p1,p2,distance);
-      translate(p1 + p/2)
+      translate(p1)
 //rotation of XoY plane by the Z axis with the angle of the [p1 p2] line projection with the X axis on the XoY plane
       rotate([0, 0, atan2(p[1], p[0])]) //rotation
 //rotation of ZoX plane by the y axis with the angle given by the z coordinate and the sqrt(x^2 + y^2)) point in the XoY plan
@@ -149,32 +148,44 @@ function project(pts,i=0) =
         ? concat([[pts[i][0],pts[i][1]]], project(pts,i+1))
         : [];
 
-module face_hole (face,scale,h) {
+
+module face_prism (face,face_scale,prism_scale,h) {
     assign (n = normal(face), c= centre(face))
     assign (m = orientate_r(c,n))
-    assign (tpts =  scale * transform_points(face,m))
+    assign (tpts =  face_scale * transform_points(face,m))
     assign (xy = project(tpts))
-      translate([0,0,-h/2]) 
-        linear_extrude(height=h) 
+      linear_extrude(height=h,scale=prism_scale) 
           polygon(points=xy);
 }
 
-module face_holes(faces,points,scale,h) {
+module face_prisms_in(faces,points,face_scale,prism_scale,h) {
     for (i=[0:len(faces) - 1]) 
        assign (f = as_points(faces[i],points)) 
        assign (n = normal(f), c = centre(f))
        locate(c,c+n) 
-          face_hole(f,scale,h);
+          translate([0,0,eps]) 
+               mirror() rotate([0,180,0]) 
+                   face_prism(f,face_scale,prism_scale,h);
 }
 
+module face_prisms_out(faces,points,face_scale,prism_scale,h) {
+    for (i=[0:len(faces) - 1]) 
+       assign (f = as_points(faces[i],points)) 
+       assign (n = normal(f), c = centre(f))
+       locate(c,c+n) 
+          face_prism(f,face_scale,prism_scale,h);
+}
+
+eps=0.01;
 scale=20;
 shell_ratio=0.1;
-hole_ratio = 0.8;
-hole_depth=12;
+prism_ratio =0.8;
+prism_height=10;
+prism_scale=0.5;
 spoints = scale * points;
 
 difference() {
-  polyhedron(spoints,faces);
-  scale(1-shell_ratio)  polyhedron(spoints,faces);
-  face_holes(faces,spoints,hole_ratio,hole_depth);
+    polyhedron(spoints,faces);
+    scale(1-shell_ratio) polyhedron(spoints,faces);
+    face_prisms_in(faces,spoints,prism_ratio,prism_scale,prism_height);
 }
