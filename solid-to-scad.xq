@@ -1,8 +1,6 @@
 declare variable $local:db := concat("/db/",substring-after(system:get-module-load-path(),"/db/"),"/");
 declare variable $local:solids := doc("/db/apps/3d/grouped-solids.xml");
 
-declare option exist:serialize "method=text media-type=text/text";
-
 declare function local:parse-text($meta) {
   let $url := concat("http://dmccooey.com/polyhedra/",$meta/id,".txt")
   let $doc := httpclient:get(xs:anyURI($url),false(),())/httpclient:body
@@ -195,7 +193,7 @@ let $openscad := if($solid)
                     )
                  else             
 ()
-(: let $serialize := util:declare-option("exist:serialize", "format=text media-type=text/text"):)
+let $serialize := util:declare-option("exist:serialize", "method=text media-type=text/text")
 let $header := response:set-header('content-disposition', concat("attachment; filename=",$id,".scad")) 
 return
   if ($scad_main)
