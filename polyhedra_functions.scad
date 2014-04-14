@@ -1,6 +1,4 @@
 
-// ruler(10);
-
 // functions for the construction of polyhedra
 // chris wallace
 // see http://kitwallace.tumblr.com/tagged/polyhedra for info
