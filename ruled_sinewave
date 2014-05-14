@@ -1,0 +1,118 @@
+
+function saw(t) = 1 - 2*abs(t-0.5);
+
+function norm(v) =
+    pow(v.x*v.x + v.y*v.y + v.z*v.z,0.5);
+
+module orient_to(origin, normal) {   
+      translate(origin)
+      rotate([0, 0, atan2(normal.y, normal.x)]) 
+      rotate([0, atan2(sqrt(pow(normal.x, 2)+pow(normal.y, 2)),normal.z), 0])
+      child();
+}
+
+module slice(x,thickness,params) {
+    assign(pa = f(x,params)) 
+    assign(pb = g(x,params))
+    assign(length = norm(pb-pa))
+    orient_to(pa,pb-pa)
+        cylinder(r=thickness,h=length);   
+};
+
+module ruled_surface(limit,step,thickness=1,params) {
+ for (x=[0:step:limit])
+  hull() {
+      slice(x,thickness,params);
+      slice(x+step,thickness,params);
+  }
+};
+
+module ground(size=50) {
+   translate([0,0,-size]) cube(2*size,center=true);
+}
+
+module ruler(n) {
+   for (i=[0:n-1]) 
+       translate([(i-n/2 +0.5)* 10,0,0]) cube([9.8,5,2], center=true);
+}
+
+module ring(radius,thickness,height) {
+   difference() {
+      cylinder(h=height,r=radius);
+      translate([0,0,-eps]) cylinder(h=height+2*eps,r=radius - thickness);
+   }
+}
+
+function mix_color(x) = 
+   [1,0,0]  +  x * ([0,1,0] - [1,0,0]);
+
+module draw_f(limit,step,thickness,params) {
+  for (x=[0:step:limit]) 
+      assign(f0 = f(x,params),f1=f(x+step,params)) 
+        orient_to(f0,f1-f0)
+          color(mix_color(x)) cylinder(d=thickness,h=norm(f1-f0));
+}
+
+module draw_g(limit,step,thickness,params) {
+  for (x=[0:step:limit]) 
+      assign(g0 = g(x,params),g1=g(x+step,params)) 
+        orient_to(g0,g1-g0)
+           color(mix_color(x)) cylinder(d=thickness,h=norm(g1-g0));
+}
+
+module outline(Limit,Step,thickness=0.5) {
+     draw_f(Limit,Step,thickness);
+     draw_g(Limit,Step,thickness*2);
+}
+
+// ruled surface defining functions
+
+function f(x,p) = [Radius * cos(x*180 + 180),
+                   Radius * sin(x*180 + 180 ) ,
+                   0];
+
+function g(x,p) =  [2*Radius * x - Radius,
+                   0,
+                   2 * abs($t-0.5)*Radius * sin(x*360)
+                  ];
+
+// these modules construct parts ofthe model and vary depending on the generate ruled surface
+
+module quadrant() {
+   difference() {
+       translate([0,0,-eps]) 
+           rotate([-90,0,0])
+              ruled_surface(1,Step,Thickness);
+       ground();
+   }
+}
+
+module half() {
+    color("green") quadrant();
+    color("red")  
+       mirror() 
+          rotate([180,0,0])
+             quadrant();
+}
+
+module whole() {
+    half();
+    rotate([180,0,0])
+       half();
+}
+
+// variables
+
+Radius=10;
+Steps=100;
+Step=1/Steps;
+Thickness=0.5;
+eps=0.1;
+$fn= 10;
+
+
+ half();
+
+
+* outline(1,Step);
+
