@@ -56,8 +56,8 @@ function vadd(points,v) =
       [ for (p = points)  p + v];
 
 function reverse(v) =
-    [ for (i = [len(v)-1:-1:0]) v[i] ];
-
+  let(max=len(v) -1)
+  [ for (i = [0:max])  v[max - i] ];
 
 function project(v,dims) =
     [ for (p = v) [for (d = dims) p[d]] ] ;
