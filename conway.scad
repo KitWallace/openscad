@@ -4,14 +4,14 @@ The project is being documented in my blog
   http://kitwallace.tumblr.com/tagged/conway
 
 Done :
-    primitives T,C,O,D I , pyramid(), prism() , antiprism()
+    primitives T,C,O,D, I , pyramid(), prism() , antiprism()
     operators
        kis(obj,ratio, nsides)
        ambo(obj)
       
      
-    last updated 14 Jan 2015 
-    
+    last updated 14 Jan 2015 17:00
+       poly object constructer caches edges 
 */
 // list comprehension support
 
@@ -242,11 +242,14 @@ function spherize(points,radius) =
 
   
 // poly functions
+//  constructor
+function poly(name,vertices,faces) = [name,vertices,faces,edges(faces)];
+    
 // accessors
 function poly_name(obj) = obj[0];
 function poly_vertices(obj) = obj[1];
 function poly_faces(obj) = obj[2];
-function poly_edges(obj) = edges(poly_faces(obj));
+function poly_edges(obj) = obj[3];
 
 function poly_normalize(obj,radius) =
    [str(poly_name(obj)," Normalized"),
@@ -277,14 +280,12 @@ module poly_print(obj) {
 C0 = 0.809016994374947424102293417183;
 C1 = 1.30901699437494742410229341718;
 C2 = 0.7071067811865475244008443621048;
-T=
-  [ "Tetrahedron",
-    [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
-    [[2,1,0],[3,2,0],[1,3,0],[2,3,1]]
-    ];
-C =              
-    [ "Cube",
-[
+T= poly(name= "Tetrahedron",
+       vertices= [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
+       faces= [[2,1,0],[3,2,0],[1,3,0],[2,3,1]]
+    );
+C = poly(name= "Cube",
+       vertices= [
 [ 0.5,  0.5,  0.5],
 [ 0.5,  0.5, -0.5],
 [ 0.5, -0.5,  0.5],
@@ -293,6 +294,7 @@ C =
 [-0.5,  0.5, -0.5],
 [-0.5, -0.5,  0.5],
 [-0.5, -0.5, -0.5]],
+      faces=
  [
 [ 4 , 5, 1, 0],
 [ 2 , 6, 4, 0],
@@ -300,18 +302,17 @@ C =
 [ 6 , 2, 3, 7],
 [ 5 , 4, 6, 7],
 [ 3 , 1, 5, 7]]
-];
+   );
 
-O =
-    [ "Octahedron",
-[
+O = poly(name="Octahedron",
+         vertices=[
 [0.0, 0.0,  C2],
 [0.0, 0.0, -C2],
 [ C2, 0.0, 0.0],
 [-C2, 0.0, 0.0],
 [0.0,  C2, 0.0],
 [0.0, -C2, 0.0]],
- [
+        faces= [
 [ 4 , 2, 0],
 [ 3 , 4, 0],
 [ 5 , 3, 0],
@@ -320,10 +321,9 @@ O =
 [ 3 , 5, 1],
 [ 4 , 3, 1],
 [ 2 , 4, 1]]   
-    ];
-D = 
-["Dodecahedron",
-[
+    );
+D = poly(name="Dodecahedron",
+         vertices=[
 [ 0.0,  0.5,   C1],
 [ 0.0,  0.5,  -C1],
 [ 0.0, -0.5,   C1],
@@ -344,7 +344,7 @@ D =
 [ -C0,   C0,  -C0],
 [ -C0,  -C0,   C0],
 [ -C0,  -C0,  -C0]],
-[
+         faces=[
 [ 12 ,  4, 14,  2,  0],
 [ 16 , 10,  8, 12,  0],
 [  2 , 18,  6, 16,  0],
@@ -357,11 +357,10 @@ D =
 [  8 , 10, 17,  1, 13],
 [  5 ,  4, 12,  8, 13],
 [  1 ,  3, 15,  5, 13]]
-];
-I =
-[ "Icosahedron",
-
-[
+   );
+   
+I = poly(name= "Icosahedron",
+         vertices= [
 [ 0.5,  0.0,   C0],
 [ 0.5,  0.0,  -C0],
 [-0.5,  0.0,   C0],
@@ -374,7 +373,7 @@ I =
 [ 0.0,   C0, -0.5],
 [ 0.0,  -C0,  0.5],
 [ 0.0,  -C0, -0.5]],
- [
+        faces=[
 [ 10 ,  2,  0],
 [  5 , 10,  0],
 [  4 ,  5,  0],
@@ -396,28 +395,28 @@ I =
 [  1 ,  3, 11],
 [  9 ,  3,  1]]
 
-];
+);
 
 
 function Pyramid(n,h=1) =
-    [ str("Y",n) ,
-      concat(
+  poly(name= str("Y",n) ,
+      vertices=concat(
         [for (i=[0:n-1])
             [cos(i*360/n),sin(i*360/n),0]
         ],
         [[0,0,h]]
       ),
-      concat(
+      faces=concat(
         [for (i=[0:n-1])
             [(i+1)%n,i,n]
         ],
         [[for (i=[0:n-1]) i]]
       )
-     ];
+     );
 
 function Prism(n,h=1) =
-    [ str("P",n) ,
-      concat(
+  poly(name=str("P",n) ,
+      vertices=concat(
         [for (i=[0:n-1])
             [cos(i*360/n),sin(i*360/n),-h/2]
         ],
@@ -425,18 +424,18 @@ function Prism(n,h=1) =
             [cos(i*360/n),sin(i*360/n),h/2]
         ]
       ),
-      concat(
+      faces=concat(
         [for (i=[0:n-1])
             [(i+1)%n,i,i+n,(i+1)%n + n]
         ],
         [[for (i=[0:n-1]) i]], 
         [[for (i=[n-1:-1:0]) i+n]]
       )
-     ];
+     );
         
 function Antiprism(n,h=1) =
-    [ str("A",n) ,
-      concat(
+ poly(name=str("A",n) ,
+      vertices=concat(
         [for (i=[0:n-1])
             [cos(i*360/n),sin(i*360/n),-h/2]
         ],
@@ -444,27 +443,28 @@ function Antiprism(n,h=1) =
             [cos((i+1/2)*360/n),sin((i+1/2)*360/n),h/2]
         ]
       ),
-      concat(
+      faces=concat(
         [for (i=[0:n-1])
             [(i+1)%n,i,i+n,(i+1)%n + n]
         ],
         [[for (i=[0:n-1]) i]], 
         [[for (i=[n-1:-1:0]) i+n]]
       )
-     ];
+     );
 
 // Conway operators 
-// kis - k 
 function kis(obj,ratio=0.1, fn=[]) =
-    [str(poly_name(obj), " Kis(",ratio,")"),
-     concat(poly_vertices(obj),                   // original vertices
+    poly(name=str(poly_name(obj), " Kis(",ratio,")"),
+      vertices= 
+         concat(poly_vertices(obj),                   // original vertices
          [for (f = poly_faces(obj))               // new centrid vertices
             let(fp=as_points(f,poly_vertices(obj)))
             (len(fn)==0 || contains(len(f),fn))   // to be included
                ? centre(fp) + normal(fp)*ratio    // centroid + a bit of normal
                : []                               // to preserve the numbering for faces
          ]),
-     flatten(
+      faces=
+        flatten(
          [for (i = [0:len(poly_faces(obj))-1])   // use indexes so new vertices can be located
             let(f = poly_faces(obj)[i])
             (len(fn)==0 || contains(len(f),fn))
@@ -473,29 +473,30 @@ function kis(obj,ratio=0.1, fn=[]) =
                ]
               : [f]                              // original face
          ]) 
-    ];
-
- function ambo(obj) =
-      [str(poly_name(obj), " Ambo"),
-       [for (e = poly_edges(obj))
+    );
+              
+function ambo(obj) =
+  poly(name=str(poly_name(obj), " Ambo"),
+       vertices= [for (e = poly_edges(obj))                 
            let (ep = as_points(e,poly_vertices(obj)))
-           (ep[0]+ep[1])/2
-       ],
-       
-       concat(
+           (ep[0]+ep[1])/2             // vertices are the edge midpoints
+                                       // so the new vertex order is the old edge order
+                ],     
+       faces= 
+         concat(
          [for (face = poly_faces(obj))
-            [for (e = face_edges(face))
+            [for (e = face_edges(face))          // old faces become the same with the new vertices
               index_of(e,poly_edges(obj))
             ]
          ]     
        ,        
-        [for (vi = [0:len(poly_vertices(obj))-1])
-           [for (ve = vertex_edges(vi,vertex_faces(vi,poly_faces(obj))))
+        [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
+           let (vf=vertex_faces(vi,poly_faces(obj))) // the old edges in left-hand order as vertices
+           [for (ve = vertex_edges(vi,vf))
               index_of(ve,poly_edges(obj))               
            ]
           ]  
          )
-       ];       
-
-             
-poly_render(ambo(kis(T,0.5)));
+       );       
+//         
+poly_render(kis(ambo(D),-0.3,[5]));
