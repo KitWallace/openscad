@@ -4,19 +4,30 @@ The project is being documented in my blog
   http://kitwallace.tumblr.com/tagged/conway
 
 Done :
-    primitives T,C,O,D, I , pyramid(), prism() , antiprism()
-    operators
+    poly object constructor caching edges
+    poly accessors
+    primitives T,C,O,D, I , Pyramid(), Prism() , Antiprism()
+    
+    operators 
+       transform(obj,matrix)    matrix transformation of vertices
        kis(obj,ratio, nsides)
        ambo(obj)
+       dual(obj)  
+       meta(obj,ratio,nsides)
+       trunc(obj)
+       centre_adjust(obj)- for canonicalization
+       
+       
+    last updated 18 Jan 2015 23:30
       
-     
-    last updated 14 Jan 2015 17:00
-       poly object constructer caches edges 
 */
 // list comprehension support
 
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
     
+function reverse(l) = 
+     [for (i=[0:len(l)-1]) l[len(l)-i]];
+   
 //  functions for creating the matrices for transforming a single point
 
 function m_translate(v) = [ [1, 0, 0, 0],
@@ -39,18 +50,26 @@ function m_rotate(v) =  [ [1,  0,         0,        0],
                             
 function vec3(v) = [v.x, v.y, v.z];
 function transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
-                            
-function matrix_to(p0, p) = 
-                       m_rotate([0, atan2(sqrt(pow(p[0], 2) + pow(p[1], 2)), p[2]), 0]) 
-                     * m_rotate([0, 0, atan2(p[1], p[0])]) 
-                     * m_translate(p0);
+function transform_points(ps,m) =
+   [for (p=ps) transform(p,m)];
+       
+function m_to(centre,normal) = 
+      m_rotate([0, atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]) 
+    * m_rotate([0, 0, atan2(normal[1], normal[0])]) 
+    * m_translate(centre);   
+   
+function m_from(centre,normal) = 
+      m_translate(-centre)
+    * m_rotate([0, 0, -atan2(normal[1], normal[0])]) 
+    * m_rotate([0, -atan2(sqrt(pow(normal[0], 2) + pow(normal[1], 2)), normal[2]), 0]); 
 
-function matrix_from(p0, p) = 
-                      m_translate(-p0)
-                      * m_rotate([0, 0, -atan2(p[1], p[0])]) 
-                      * m_rotate([0, -atan2(sqrt(pow(p[0], 2) + pow(p[1], 2)), p[2]), 0]); 
-
-
+// object operators
+module orient_to(centre, normal) {   
+      translate(centre)
+      rotate([0, 0, atan2(normal[1], normal[0])]) //rotation
+      rotate([0, atan2(sqrt(pow(normal[0], 2)+pow(normal[1], 2)),normal[2]), 0])
+      children();
+}
 // vector functions
 
 function vadd(points,v,i=0) =
@@ -63,15 +82,14 @@ function vsum(points,i=0) =
         ?  (points[i] + vsum(points,i+1))
         :  [0,0,0];
 
+function norm2(v) = v.x*v.x+ v.y*v.y + v.z*v.z;
+
+
 function ssum(list,i=0) =  
       i < len(list)
         ?  (list[i] + ssum(list,i+1))
         :  0;
-
-function reverse(l) = 
-     [for (i=[0:len(l)-1]) l[len(l)-i]];
- 
-     
+   
 function max(v, max=-9999999999999999,i=0) =
     i < len(v) 
         ?  v[i] > max 
@@ -126,14 +144,29 @@ function average_norm(points) =
 
 function transform_points(points, matrix) = 
     [for (p=points) transform(p, matrix) ] ;
- 
+
+     
 // vertex functions
     
 function vertex_faces(p,faces) =
      [ for (f=faces)  
            if(contains(p,f)) f
      ];
-                    
+function ordered_vertex_faces_r(v,vfaces,cface,ofaces)  =
+     len(ofaces) < len(vfaces)
+          ? ordered_vertex_faces_r(
+              v,
+              vfaces,
+              face_with_edge(vfaces,reverse_edge(last_face_edge(v,cface))),
+              concat(ofaces,[
+                 face_with_edge(vfaces,reverse_edge(last_face_edge(v,cface)))]
+              )
+           )
+          : ofaces;  
+
+function ordered_vertex_faces(v,vfaces)  =
+    ordered_vertex_faces_r(v,vfaces,vfaces[0],[]);
+                
 function vertex_edges_r(v,vfaces,cface,vedges)  =
      len(vedges) < len(vfaces)
           ? vertex_edges_r(
@@ -143,10 +176,24 @@ function vertex_edges_r(v,vfaces,cface,vedges)  =
               concat(vedges,[order_edge(last_face_edge(v,cface))])
               )
           : vedges;
-          
+
 function vertex_edges(v,vfaces)  =
     vertex_edges_r(v,vfaces,vfaces[0],[]);
-          
+
+function ordered_vertex_edges_r(v,vfaces,cface,vedges)  =
+     len(vedges) < len(vfaces)
+          ? ordered_vertex_edges_r(
+              v,
+              vfaces,
+              face_with_edge(vfaces,reverse_edge(last_face_edge(v,cface))),
+              concat(vedges,[last_face_edge(v,cface)])
+              )
+          : vedges;
+ 
+function ordered_vertex_edges(v,vfaces)  =
+    ordered_vertex_edges_r(v,vfaces,vfaces[0],[]);
+    
+   
 // edge functions
           
 function reverse_edge(e) = [e[1],e[0]];
@@ -184,7 +231,8 @@ function edge_lengths(edges,points) =
      let(points = as_points(edge,points))
         norm(points[0]-points[1])
  ];
-   
+
+
 //face functions
  
 function normal_r(face) =
@@ -225,7 +273,13 @@ function last_face_edge(v,face) =
      flatten(
       [for (e = ordered_face_edges(face))
           if (e[1]==v) e
-      ]);    
+      ]);   
+         
+function face_coplanar(face) =
+    abs( norm(cross(face[0]-face[1],face[1]-face[2]))
+       - norm(cross(face[1]-face[2],face[2]-face[3])))
+        < 0.001 ;
+                  
 // normalisation
    
 // normalize the points to have origin at 0,0,0 
@@ -240,7 +294,6 @@ function spherize(points,radius) =
     [for (p=points)
         p * radius /norm(p)];
 
-  
 // poly functions
 //  constructor
 function poly(name,vertices,faces) = [name,vertices,faces,edges(faces)];
@@ -250,31 +303,63 @@ function poly_name(obj) = obj[0];
 function poly_vertices(obj) = obj[1];
 function poly_faces(obj) = obj[2];
 function poly_edges(obj) = obj[3];
-
+function poly_planar(obj) =
+     [for (face = poly_faces(obj))
+         if (len(face) >3)
+             let (points = as_points(face,poly_vertices(obj)))
+                if (!face_coplanar(points)) face
+     ];
+     
 function poly_normalize(obj,radius) =
-   [str(poly_name(obj)," Normalized"),
-    normalize(poly_vertices(obj),radius),
-    poly_faces(obj)];
+   poly(
+      name=str(poly_name(obj)," Normalized"),
+      vertices=normalize(poly_vertices(obj),radius),
+      faces=poly_faces(obj));
     
 function poly_spherize(obj,radius=1) =
-   [str(poly_name(obj)," Spherized"),
-    spherize(poly_vertices(obj),radius),
-    poly_faces(obj)];
+   poly(
+      name=str(poly_name(obj)," Spherized"),
+      vertices=spherize(poly_vertices(obj),radius),
+      faces= poly_faces(obj));
 
 function poly_transform(obj,matrix) =
-     [str(poly_name(obj)," Transformed"),
-      transform_points(poly_vertices(obj),matrix),
-      poly_faces(obj)];
+   poly(
+       name=str(poly_name(obj)," Transformed"),
+       vertices=transform_points(poly_vertices(obj),matrix),
+       faces=poly_faces(obj));
 
-module poly_render(obj) {
-     polyhedron(poly_vertices(obj),poly_faces(obj));
+module show_points(points,r=0.1) {
+    for (point=points)
+        translate(point) sphere(r);
+};
+
+module show_edge(edge, r) {
+    assign(p0 = edge[0], p1 = edge[1])
+    assign(v = p1 -p0 )
+      orient_to(p0,v)
+         cylinder(r=r, h=norm(v)); 
+};
+
+module show_edges(edges,points,r=0.1) {
+    for (edge = edges)
+        show_edge(as_points(edge, points), r); 
+};
+        
+module poly_render(obj,show_vertices=true,show_edges=true,show_faces=true, re=0.02,rv=0.04) {
+     if(show_faces) 
+          polyhedron(poly_vertices(obj),poly_faces(obj));
+     if(show_vertices) 
+         show_points(poly_vertices(obj),rv);
+     if(show_edges)
+         show_edges(poly_edges(obj),poly_vertices(obj),re);
 };
 
 module poly_print(obj) {
-    echo("Name",poly_name(obj));
-    echo(len(poly_vertices(obj)), "Vertices" ,poly_vertices(obj));
-    echo(len(poly_faces(obj)),"Faces", poly_faces(obj));
-    echo(len(poly_edges(obj)),"Edges",poly_edges(obj));
+    echo(poly_name(obj));
+    echo(str(len(poly_vertices(obj)), " Vertices " ,poly_vertices(obj)));
+    echo(str(len(poly_faces(obj))," Faces ", poly_faces(obj)));
+    echo(str(len(poly_edges(obj))," Edges ",poly_edges(obj)));
+    echo(str(len(poly_planar(obj))," faces are not planar"));
 };
 // primitive solids
 C0 = 0.809016994374947424102293417183;
@@ -394,9 +479,7 @@ I = poly(name= "Icosahedron",
 [ 11 ,  3,  7],
 [  1 ,  3, 11],
 [  9 ,  3,  1]]
-
 );
-
 
 function Pyramid(n,h=1) =
   poly(name= str("Y",n) ,
@@ -445,8 +528,12 @@ function Antiprism(n,h=1) =
       ),
       faces=concat(
         [for (i=[0:n-1])
-            [(i+1)%n,i,i+n,(i+1)%n + n]
+            [(i+1)%n,i,i+n]
         ],
+        [for (i=[0:n-1])
+            [(i+1)%n,i+n,(i+1)%n + n]
+        ],
+        
         [[for (i=[0:n-1]) i]], 
         [[for (i=[n-1:-1:0]) i+n]]
       )
@@ -475,6 +562,92 @@ function kis(obj,ratio=0.1, fn=[]) =
          ]) 
     );
               
+function meta(obj,ratio=0.1, fn=[]) =
+    poly(name=str(poly_name(obj), " Meta(",ratio,")"),
+      vertices= 
+         concat(poly_vertices(obj),                   // original vertices
+         [for (f = poly_faces(obj))               // new centre vertices
+            let(fp=as_points(f,poly_vertices(obj)))
+            (len(fn)==0 || contains(len(f),fn))   // to be included
+               ? centre(fp) + normal(fp)*ratio    // centroid + a bit of normal
+               : []                               // to preserve the numbering for faces
+         ],
+         [for (e=poly_edges(obj))
+             let (ep = as_points(e,poly_vertices(obj)))
+           (ep[0]+ep[1])/2
+         ]),
+      faces=
+        flatten(
+         [for (i = [0:len(poly_faces(obj))-1])   // use indexes so new vertices can be located
+            let(f = poly_faces(obj)[i])
+            (len(fn)==0 || contains(len(f),fn))
+              ? flatten(
+                 [for (p=[0:len(f)-1])            //  replace face with 2n trianges          
+                   [
+                     [
+                       len(poly_vertices(obj))
+                         + len(poly_faces(obj))
+                         + index_of(order_edge([f[p],f[(p+1)%len(f)]]),poly_edges(obj)),
+                       len(poly_vertices(obj))+i,
+                       f[p]
+                     ]
+                    ,           
+                  [f[(p+1)%len(f)],
+                   len(poly_vertices(obj))+i,
+                   len(poly_vertices(obj))
+                     + len(poly_faces(obj)) 
+                     + index_of(order_edge([f[p],f[(p+1)%len(f)]]),poly_edges(obj))
+                  ]         
+                 ]
+                ]
+                 )
+              : [f]                              // original face
+         ]) 
+    ); 
+
+function trunc(obj,ratio=0.25, fn=[]) =
+    ratio >= 0.5
+      ? ambo(obj,fn)
+      : poly(name=str(poly_name(obj), " Trunc(",ratio,")"),
+      vertices=         
+         flatten(
+            [for (e=poly_edges(obj))
+             let (ep = as_points(e,poly_vertices(obj)))
+               [
+                 ep[0]+ratio*(ep[1]-ep[0]),
+                 ep[1]+ratio*(ep[0]-ep[1])         
+               ]
+           ])
+         ,
+      faces= 
+         concat(    
+            [for (face = poly_faces(obj))
+            let (edges = ordered_face_edges(face))
+            flatten([for (i =[0:len(edges)-1] )         
+                let (ei = edges[i])
+                let (k= index_of(order_edge(ei),poly_edges(obj)))
+                let (oei=poly_edges(obj)[k])           
+                   [  ei==oei ? 2 *k: 2*k+1 ,
+                      ei==oei ? 2 *k+1: 2*k 
+                   ]
+            
+            ])
+         ] 
+     ,       
+    [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
+         let (vf=vertex_faces(vi,poly_faces(obj))) // the old edges in left-hand order as vertices
+         [for (ve = ordered_vertex_edges(vi,vf))                 
+              let (k=index_of(order_edge(ve),poly_edges(obj)))
+              let (ue = poly_edges(obj)[k])
+                 ve == ue 
+                    ? 2 *k +1
+                    : 2 * k 
+                             
+           ]
+          ]  
+         )
+    ); 
+         
 function ambo(obj) =
   poly(name=str(poly_name(obj), " Ambo"),
        vertices= [for (e = poly_edges(obj))                 
@@ -497,6 +670,58 @@ function ambo(obj) =
            ]
           ]  
          )
-       );       
-//         
-poly_render(kis(ambo(D),-0.3,[5]));
+       );
+
+function dual(obj) =
+      poly(name=str(poly_name(obj) , " Dual"),
+           vertices = 
+              [for (f = poly_faces(obj))
+                   face_centre(f,poly_vertices(obj))      
+              ],
+           faces= 
+          [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
+           let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
+           [for (of = ordered_vertex_faces(vi,vf))
+              index_of(of,poly_faces(obj))               
+           ]
+          ] 
+           );
+
+function rdual(obj) =
+      poly(name=str(poly_name(obj) , " RDual"),
+           vertices =
+                [ for (f=poly_faces(obj))
+                  let (c=centre(as_points(f,poly_vertices(obj))))
+                     c / norm2(c)
+                ]
+           ,
+           faces= 
+          [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
+           let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
+           [for (of = ordered_vertex_faces(vi,vf))
+              index_of(of,poly_faces(obj))               
+           ]
+          ] 
+           );
+
+function centre_adjust(obj,n) = 
+    n > 0 
+       ? centre_adjust(rdual(rdual(obj)),n-1)   
+       : obj;
+           
+// measures 
+module ruler(n) {
+   for (i=[0:n-1]) 
+       translate([(i-n/2 +0.5)* 10,0,0]) cube([9.8,5,2], center=true);
+}
+
+module ground(x=0) {
+   translate([0,0,-(50+x)]) cube(100,center=true);
+}
+
+
+$fn=20;
+
+
+dss=centre_adjust(dual(centre_adjust(ambo(ambo(D)),1)),2);
+poly_render(dss);
