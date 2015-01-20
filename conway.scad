@@ -6,7 +6,7 @@ The project is being documented in my blog
 Done :
     poly object constructor caching edges
     poly accessors
-    primitives T,C,O,D, I , Pyramid(), Prism() , Antiprism()
+    primitives T,C,O,D, I , Y(), P(), A()
     
     operators 
        transform(obj,matrix)    matrix transformation of vertices
@@ -303,19 +303,6 @@ function face_analysis_r(faces,edge_counts) =  // get number of occurances of ev
 function face_analysis(faces) =
   face_analysis_r(faces,face_sides(faces));
    
-// normalisation  - some added functions unused at present
-   
-// normalize the points to have origin at 0,0,0 
-function centre_points(points) = 
-     vadd(points, - centre(points));
-
-//scale to average radius = radius
-function normalize(points,radius) =
-    points * radius /average_norm(points);
-
-function spherize(points,radius) =
-    [for (p=points)
-        p * radius /norm(p)];
 
 // poly functions
 //  constructor
@@ -576,7 +563,45 @@ function A(n,h=1) =
         [[for (i=[n-1:-1:0]) i+n]]
       )
      );
+// canonicalisation
+   
+// normalize the points to have origin at 0,0,0 
+function centre_points(points) = 
+     vadd(points, - centre(points));
 
+//scale to average radius = radius
+function normalize(points,radius) =
+    points * radius /average_norm(points);
+
+function spherize(points,radius) =
+    [for (p=points)
+        p * radius /norm(p)];
+      
+function rdual(obj,radius=1) =
+      poly(name=str("c",poly_name(obj)),
+           vertices =
+                [ for (f=poly_faces(obj))
+                  let (c=centre(
+                         as_points(f,
+                           normalize(centre_points(poly_vertices(obj)),radius))))
+                     c / norm2(c)
+                ]
+           ,
+           faces= 
+                 [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
+           let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
+           [for (of = ordered_vertex_faces(vi,vf))
+              index_of(of,poly_faces(obj))               
+           ]
+          ]
+           );
+          
+function canon(obj,n=1) = 
+    n > 0 
+       ? canon(rdual(rdual(obj)),n-1)   
+       : obj;
+           
+           
 // Conway operators 
 function kis(obj,expand=-0.1, fn=[]) =
     poly(name=str("k",poly_name(obj)),
@@ -823,7 +848,7 @@ function dual(obj) =
       poly(name=str("d",poly_name(obj)),
            vertices = 
               [for (f = poly_faces(obj))
-                   face_centre(f,poly_vertices(obj))      
+                face_centre(f,poly_vertices(obj))   
               ],
            faces= 
           [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
@@ -833,28 +858,6 @@ function dual(obj) =
            ]
           ] 
            );
-
-function rdual(obj) =
-      poly(name=str("c",poly_name(obj)),
-           vertices =
-                [ for (f=poly_faces(obj))
-                  let (c=centre(as_points(f,poly_vertices(obj))))
-                     c / norm2(c)
-                ]
-           ,
-           faces= 
-                 [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
-           let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
-           [for (of = ordered_vertex_faces(vi,vf))
-              index_of(of,poly_faces(obj))               
-           ]
-          ]
-           );
-          
-function canon(obj,n=1) = 
-    n > 0 
-       ? canon(rdual(rdual(obj)),n-1)   
-       : obj;
 
 function expand_faces(faces,start=0,i=0) = 
       i < len(faces)
@@ -968,6 +971,6 @@ $fn=10;
 
 // scale(15) poly_render(s,true,true,false,0.05,0.05);
 
-s=canon(dual(snub(C)),2);
+s=canon(dual(canon(Y(3))));
 poly_print(s);
 scale(20) poly_render(s,true,true,true);
