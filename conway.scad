@@ -31,7 +31,7 @@ requires development snapshot
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
     
 function reverse(l) = 
-     [for (i=[0:len(l)-1]) l[len(l)-i]];
+     [for (i=[1:len(l)]) l[len(l)-i]];
    
 //  functions for creating the matrices for transforming a single point
 
@@ -165,9 +165,9 @@ function ordered_vertex_faces_r(v,vfaces,cface,ofaces)  =
           ? ordered_vertex_faces_r(
               v,
               vfaces,
-              face_with_edge(vfaces,reverse_edge(last_face_edge(v,cface))),
+              face_with_edge(vfaces,reverse(last_face_edge(v,cface))),
               concat(ofaces,[
-                 face_with_edge(vfaces,reverse_edge(last_face_edge(v,cface)))]
+                 face_with_edge(vfaces,reverse(last_face_edge(v,cface)))]
               )
            )
           : ofaces;  
@@ -180,7 +180,7 @@ function vertex_edges_r(v,vfaces,cface,vedges)  =
           ? vertex_edges_r(
               v,
               vfaces,
-              face_with_edge(vfaces,reverse_edge(last_face_edge(v,cface))),
+              face_with_edge(vfaces,reverse(last_face_edge(v,cface))),
               concat(vedges,[distinct_edge(last_face_edge(v,cface))])
               )
           : vedges;
@@ -193,7 +193,7 @@ function ordered_vertex_edges_r(v,vfaces,cface,vedges)  =
           ? ordered_vertex_edges_r(
               v,
               vfaces,
-              face_with_edge(vfaces,reverse_edge(last_face_edge(v,cface))),
+              face_with_edge(vfaces,reverse(last_face_edge(v,cface))),
               concat(vedges,[last_face_edge(v,cface)])
               )
           : vedges;
@@ -221,11 +221,10 @@ function last_face_edge(v,face) =
           
 // edge functions
           
-function reverse_edge(e) = [e[1],e[0]];
 function distinct_edge(e) = 
      e[0]< e[1]
            ? e
-           : reverse_edge(e);
+           : reverse(e);
           
 function ordered_face_edges(f) =
  // edges are ordered anticlockwise
@@ -892,7 +891,7 @@ function snub(obj,expand=0.5) =
                  ],
              flatten( [for (face=poly_faces(obj))
                 flatten(  [for (edge=ordered_face_edges(face))
-                   let (oppface=face_with_edge(poly_faces(obj),reverse_edge(edge)))
+                   let (oppface=face_with_edge(poly_faces(obj),reverse(edge)))
                    let (e00=new_vertex(obj,edge[0],face))
                    let (e01=new_vertex(obj,edge[1],face))                 
                    let (e10=new_vertex(obj,edge[0],oppface))                 
@@ -930,7 +929,7 @@ function expand(obj,expand=0.5) =
               ,    //edge faces 
                flatten([for (face=poly_faces(obj))
                   [for (edge=ordered_face_edges(face))
-                   let (oppface=face_with_edge(poly_faces(obj),reverse_edge(edge)))
+                   let (oppface=face_with_edge(poly_faces(obj),reverse(edge)))
                    let (e00=new_vertex(obj,edge[0],face))
                    let (e01=new_vertex(obj,edge[1],face))                 
                    let (e10=new_vertex(obj,edge[0],oppface))                 
@@ -949,7 +948,10 @@ function reflect(obj) =
           [for (v = poly_vertices(obj))
               [v.x,-v.y,v.z]
           ],
-        faces=poly_faces(obj)
+        faces=  // reverse the winding order 
+          [ for (face =poly_faces(obj))
+              reverse(face)
+          ]
     );
          
 // measures 
@@ -971,6 +973,6 @@ $fn=10;
 
 // scale(15) poly_render(s,true,true,false,0.05,0.05);
 
-s=canon(dual(canon(Y(3))));
+s=canon(reflect(snub(C)));
 poly_print(s);
 scale(20) poly_render(s,true,true,true);
