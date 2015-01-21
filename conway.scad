@@ -21,7 +21,7 @@ Done :
        expand(obj,expand)
        reflect(obj)
        
-    last updated 20 Jan 2015 22:30
+    last updated 21 Jan 2015 12:00
  
 
 requires development snapshot
@@ -743,7 +743,8 @@ function pyra(obj,expand=0.1, fn=[]) =   // very like meta but different triangl
               : [f]                              // original face
          ] ) 
     ); 
-function ortho(obj,expand=0.1, fn=[]) =   // very like meta but divided into quadriterals
+function ortho(obj,expand=0.1, fn=[]) =  
+// very like meta but divided into quadriterals
     poly(name=str("0",poly_name(obj)),
       vertices= 
          concat(poly_vertices(obj),               // original vertices
@@ -771,8 +772,7 @@ function ortho(obj,expand=0.1, fn=[]) =   // very like meta but divided into qua
                          + len(poly_faces(obj))
                          + index_of(distinct_edge([f[(p-1+len(f))%len(f)],f[p]]),poly_edges(obj)))
                    let(vc = len(poly_vertices(obj))+i)
-                     [va,f[p],vb,vc]
-                     
+                     [va,f[p],vb,vc]                    
                  ]
               : [f]                              // original face
          ] ) 
@@ -866,13 +866,15 @@ function expand_faces(faces,start=0,i=0) =
                )
            :[]; 
 
-function new_vertex(obj,vi,of)=
-       expand_faces(poly_faces(obj))[index_of(of,poly_faces(obj))][index_of(vi,of)]  ;    
+function new_vertex(nf,vi,of,pf)=
+       nf[index_of(of,pf)][index_of(vi,of)]  ;    
        
-function snub(obj,expand=0.5) =             
-  poly(name=str(poly_name(obj), " Snub"),
+function snub(obj,expand=0.5) = 
+   let(pf=poly_faces(obj))            
+   let(ef=expand_faces(pf))
+   poly(name=str("s",poly_name(obj)),
        vertices= 
-          flatten([for (f = poly_faces(obj))   
+          flatten([for (f = pf)   
             let (r = -90 / len(f))
             let (fp = as_points(f,poly_vertices(obj)))
             let (c = centre(fp))
@@ -881,21 +883,22 @@ function snub(obj,expand=0.5) =
                [for (p = fp) transform(p,m)]
             ]),     
        faces = 
-          concat(expand_faces(poly_faces(obj)) ,
-          ,   // vertex faces 
+          concat(ef ,
+             ,   // vertex faces 
                  [for (vi=[0:len(poly_vertices(obj))-1])   
-                  let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
+                  let (vf=vertex_faces(vi,pf))   // vertex faces in left-hand order 
                   [for (of = ordered_vertex_faces(vi,vf))
-                     new_vertex(obj,vi,of)
+                     new_vertex(ef,vi,of,pf)
                   ]
-                 ],
-             flatten( [for (face=poly_faces(obj))
+                 ]
+             ,   //  two edge triangles 
+             flatten( [for (face=pf)
                 flatten(  [for (edge=ordered_face_edges(face))
-                   let (oppface=face_with_edge(poly_faces(obj),reverse(edge)))
-                   let (e00=new_vertex(obj,edge[0],face))
-                   let (e01=new_vertex(obj,edge[1],face))                 
-                   let (e10=new_vertex(obj,edge[0],oppface))                 
-                   let (e11=new_vertex(obj,edge[1],oppface)) 
+                   let (oppface=face_with_edge(pf,reverse(edge)))
+                   let (e00=new_vertex(ef,edge[0],face,pf))
+                   let (e01=new_vertex(ef,edge[1],face,pf) )                
+                   let (e10=new_vertex(ef,edge[0],oppface,pf))                 
+                   let (e11=new_vertex(ef,edge[1],oppface,pf) )
                    if (edge[0]<edge[1])
                       [
                          [e00,e10,e11],
@@ -905,11 +908,13 @@ function snub(obj,expand=0.5) =
                 ])     
           )
        ); 
-
-function expand(obj,expand=0.5) =  
-   poly(name=str("s",poly_name(obj)),
+                
+function expand(obj,expand=0.5) =                    
+   let(pf=poly_faces(obj))            
+   let(ef=expand_faces(pf))
+   poly(name=str("e",poly_name(obj)),
        vertices= 
-          flatten([for (f = poly_faces(obj))   
+          flatten([for (f = pf)   
             let (fp = as_points(f,poly_vertices(obj)))
             let (c = centre(fp))
             let (n = normal(fp))
@@ -918,27 +923,26 @@ function expand(obj,expand=0.5) =
             ]),     
        faces = 
              concat(
-                 expand_faces(poly_faces(obj))  // new expanded faces
+               ef  // new expanded faces
                ,   // vertex faces 
                  [for (vi=[0:len(poly_vertices(obj))-1])   
-                  let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
+                  let (vf=vertex_faces(vi,pf))   // vertex faces in left-hand order 
                   [for (of = ordered_vertex_faces(vi,vf))
-                     new_vertex(obj,vi,of)
+                     new_vertex(ef,vi,of,pf)
                   ]
                  ]
-              ,    //edge faces 
-               flatten([for (face=poly_faces(obj))
+               ,    //edge faces                 
+               flatten([for (face=pf)
                   [for (edge=ordered_face_edges(face))
-                   let (oppface=face_with_edge(poly_faces(obj),reverse(edge)))
-                   let (e00=new_vertex(obj,edge[0],face))
-                   let (e01=new_vertex(obj,edge[1],face))                 
-                   let (e10=new_vertex(obj,edge[0],oppface))                 
-                   let (e11=new_vertex(obj,edge[1],oppface)) 
+                   let (oppface=face_with_edge(pf,reverse(edge)))
+                   let (e00=new_vertex(ef,edge[0],face,pf))
+                   let (e01=new_vertex(ef,edge[1],face,pf))                 
+                   let (e10=new_vertex(ef,edge[0],oppface,pf))                
+                   let (e11=new_vertex(ef,edge[1],oppface,pf)) 
                    if (edge[0]<edge[1])
-                        [e00,e10,e11,e01]                 
+                       [e00,e10,e11,e01]  
                    ]
-                ] )
-                
+                ] )           
               )
        ); 
                    
@@ -964,7 +968,7 @@ module ground(x=0) {
    translate([0,0,-(100+x)]) cube(200,center=true);
 }
      
-$fn=10;
+$fn=20;
 
 // s = trunc(dual(pyra(D,expand=-0.6)));
 
@@ -973,6 +977,9 @@ $fn=10;
 
 // scale(15) poly_render(s,true,true,false,0.05,0.05);
 
-s=canon(reflect(snub(C)));
+// s=canon(kis(D,0.1),5);
+
+s=expand(P(6),0.7);
 poly_print(s);
-scale(20) poly_render(s,true,true,true);
+scale([10,10,10]) poly_render(s,true,true,false,0.04,0.04);
+//ruler(10);
