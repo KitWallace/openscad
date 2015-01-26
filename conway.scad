@@ -24,18 +24,18 @@ Done :
        gyro(obj)   
        propellor(obj,ratio)
        join(obj)  == dual(ambo(obj)
-
+       bevel(0bj) == trunc(ambo(obj))
+       
     canonicalization
        canon(obj,itr) -    canonicalization using reciprocals of centres
        normalize() centre and scale
        
 to do
-       refactor
-       better cononicalization
+       better canonicalization
        trunc/gyro for selected vertices
-       bevel
+       chamfer,whirl
        
-    last updated 25 Jan 2015 14:00
+    last updated 26 Jan 2015 13:00
  
 requires concat and list comprehension
 
@@ -172,51 +172,32 @@ function transform_points(points, matrix) =
     
 
 function vertex_faces(v,faces) =   // return the faces containing v
-     [ for (f=faces)  
-             if(search(v,f)) f
-     ];
+     [ for (f=faces) if(search(v,f)) f ];
     
-function ordered_vertex_faces_r(v,vfaces,cface,ofaces)  =
-     len(ofaces) < len(vfaces)
-          ? ordered_vertex_faces_r(
-              v,
-              vfaces,
-              face_with_edge(vfaces,reverse(last_face_edge(v,cface))),
-              concat(ofaces,[
-                 face_with_edge(vfaces,reverse(last_face_edge(v,cface)))]
-              )
-           )
-          : ofaces;  
-
-function ordered_vertex_faces(v,vfaces)  =
-    ordered_vertex_faces_r(v,vfaces,vfaces[0],[]);
-            
-function vertex_edges_r(v,vfaces,cface,vedges)  =
-     len(vedges) < len(vfaces)
-          ? vertex_edges_r(
-              v,
-              vfaces,
-              face_with_edge(vfaces,reverse(last_face_edge(v,cface))),
-              concat(vedges,[distinct_edge(last_face_edge(v,cface))])
-              )
-          : vedges;
-
-function vertex_edges(v,vfaces)  =
-    vertex_edges_r(v,vfaces,vfaces[0],[]);
-
-function ordered_vertex_edges_r(v,vfaces,cface,vedges)  =
-     len(vedges) < len(vfaces)
-          ? ordered_vertex_edges_r(
-              v,
-              vfaces,
-              face_with_edge(vfaces,reverse(last_face_edge(v,cface))),
-              concat(vedges,[last_face_edge(v,cface)])
-              )
-          : vedges;
- 
-function ordered_vertex_edges(v,vfaces)  =
-    ordered_vertex_edges_r(v,vfaces,vfaces[0],[]);
-    
+function ordered_vertex_faces(v,vfaces,cface=[],k=0)  =
+   k==0
+       ? let (nface=vfaces[0])
+           concat([nface],ordered_vertex_faces(v,vfaces,nface,k+1))
+       : k < len(vfaces)
+           ?  let(i = index_of(v,cface))
+              let(j= (i-1+len(cface))%len(cface))
+              let(edge=[v,cface[j]])
+              let(nface=face_with_edge(vfaces,edge))
+                 concat([nface],ordered_vertex_faces(v,vfaces,nface,k+1 ))  
+           : []
+;       
+      
+function ordered_vertex_edges(v,vfaces,face,k=0)  =
+   let(cface=(k==0)? vfaces[0] : face)
+   k < len(vfaces)
+           ?  let(i = index_of(v,cface))
+              let(j= (i-1+len(cface))%len(cface))
+              let(edge=[v,cface[j]])
+              let(nface=face_with_edge(vfaces,edge))
+                 concat([edge],ordered_vertex_edges(v,vfaces,nface,k+1 ))  
+           : []
+;     
+     
 function face_with_edge(faces,edge) =
      flatten(
         [for (f = faces) 
@@ -228,6 +209,8 @@ function last_face_edge(v,face) =
       [for (e = ordered_face_edges(face))
           if (e[1]==v) e
       ]);  
+
+ 
           
 // edge functions
           
@@ -300,7 +283,7 @@ function face_centres(obj) =
 function face_sides(faces) =
     [for (f=faces) len(f)];
         
-function face_coplanarity(face,tolerance=0.002) =
+function face_coplanarity(face) =
        norm(cross(cross(face[1]-face[0],face[2]-face[1]),
                   cross(face[2]-face[1],face[3]-face[2])
                  )
@@ -662,6 +645,23 @@ function canon(obj,n=1) =
              );
                      
 // Conway operators 
+                   
+function dual(obj) =
+      poly(name=str("d",poly_name(obj)),
+           vertices = 
+              [for (f = poly_faces(obj))
+                face_centre(f,poly_vertices(obj))   
+              ],
+           faces= remove_nulls(
+          [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
+           let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
+           [for (of = ordered_vertex_faces(vi,vf))
+              index_of(of,poly_faces(obj)) 
+           ]
+          ] 
+      ))
+;  ///end dual
+
 function kis(obj,expand=0.1, fn=[]) =
    let(newp=
      poly(name=str("k",poly_name(obj)),
@@ -899,7 +899,7 @@ function trunc(obj,ratio=0.25) =
       faces= 
          concat(    
             [for (face = poly_faces(obj))
-            let (edges = ordered_face_edges(face))
+            let  (edges = ordered_face_edges(face))
             flatten([for (i =[0:len(edges)-1] )         
                 let (ei = edges[i])
                 let (k= index_of(distinct_edge(ei),pe))
@@ -914,9 +914,9 @@ function trunc(obj,ratio=0.25) =
          let (vf=vertex_faces(vi,poly_faces(obj))) // the old edges in left-hand order as vertices
          [for (ve = ordered_vertex_edges(vi,vf))                 
               let (k=index_of(distinct_edge(ve),pe))
-              let (ue = poly_edges(obj)[k])
-                 ve == ue 
-                    ? 2 *k +1
+              let (ue = pe[k])
+                 ve != ue 
+                    ? 2 * k +1
                     : 2 * k                            
            ]
           ]  
@@ -982,36 +982,20 @@ function ambo(obj) =
        faces= 
          concat(
          [for (face = poly_faces(obj))
-            [for (e = distinct_face_edges(face))          // old faces become the same with the new vertices
+            [for (e = distinct_face_edges(face))   // old faces become the same with the new vertices
               index_of(e,pe)
             ]
          ]     
        ,        
         [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
-           let (vf=vertex_faces(vi,poly_faces(obj))) // the old edges in left-hand order as vertices
-           [for (ve = vertex_edges(vi,vf))
-              index_of(ve,pe)               
+           let (vf= vertex_faces(vi,poly_faces(obj))) // the old edges in left-hand order as vertices
+           [for (ve = ordered_vertex_edges(vi,vf))
+              index_of(distinct_edge(ve),pe)               
            ]
           ]  
          )
        )
 ;// end ambo
-
-function dual(obj) =
-      poly(name=str("d",poly_name(obj)),
-           vertices = 
-              [for (f = poly_faces(obj))
-                face_centre(f,poly_vertices(obj))   
-              ],
-           faces= remove_nulls(
-          [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
-           let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order 
-           [for (of = ordered_vertex_faces(vi,vf))
-              index_of(of,poly_faces(obj)) 
-           ]
-          ] 
-      ))
-;  ///end dual
 
 function expand_faces(faces,start=0,i=0) = 
       i < len(faces)
@@ -1128,7 +1112,15 @@ function join(obj) =
     )
 ;  // end join 
           
-
+function bevell(obj) =
+    let(name=poly_name(obj))
+    let(p = trunc(ambo(obj)))
+    poly(name=str("b",name),
+         vertices =poly_vertices(p),         
+         faces= poly_faces(p)
+    )
+;  // end bevel
+          
 module ruler(n) {
    for (i=[0:n-1]) 
        translate([(i-n/2 +0.5)* 10,0,0]) cube([9.8,5,2], center=true);
@@ -1140,6 +1132,7 @@ module ground(x=0) {
      
 $fn=20;
 
-s=canon(dual(propellor(D)),5);
+s=canon(propellor(trunc(ambo(C))),5);
 echo(poly_description(s));
+poly_print(s);
 scale(10) poly_render(s,true,true,true,0.03,0.03);
