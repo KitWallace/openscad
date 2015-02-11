@@ -33,14 +33,14 @@ Done :
        chamfer(obj,ratio)
        insetkis(obj,ratio,height,fn)
        modulate(obj)  with global spherical function fmod()
-       shell(obj,inset,height)
+       shell(obj,outer_inset,inner_inset,height)
        place(obj)  on largest face -use before shell
        
     canonicalization
-       planar(obj,itr) -    planarization using reciprocals of centres
+       plane(obj,itr) -    planarization using reciprocals of centres
        canon(obj,itr) -     canonicalization using edge tangents
        normalize()   - centre and scale
-       orient(obj)  - ensure all faces have lhs order (only concave )
+       orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's
        
