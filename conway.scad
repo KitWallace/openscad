@@ -1,8 +1,12 @@
 /* 
-A project by Chris Wallace to implement the Conway operations on Polyhedra.  
+A script to implement the Conway operations on Polyhedra.  
+
+By Kit Wallace kit.wallace@gmail.com
+
+Code licensed under the Creative Commons - Attribution - Share Alike license.
+
 The project is being documented in my blog 
    http://kitwallace.tumblr.com/tagged/conway
-
 
 Done :
     poly object constructor 
