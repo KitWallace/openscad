@@ -698,9 +698,9 @@ function vertex_ids(entries,offset=0,i=0) =
 function vertex_values(entries)= 
     [for (e = entries) e[1]];
  
-function vertex(key,entries) =
+function vertex(key,entries) =   // key is an array 
     entries[search([key],entries)[0]][1];
-
+    
 // operators
     
 function kis(obj,height=0.1, fn=[]) =
@@ -899,25 +899,26 @@ function trunc(obj,ratio=0.25,fn=[]) =
          [for (i=[0:len(pv)-1]) 
           let(v = pv[i])
           let(vf = vertex_faces(i,pf))
-          selected_face(vf,fn)
+          selected_face(vf,fn)        // should drop the _face 
             ? let(oe = ordered_vertex_edges(i,vf))     
               [for (edge=oe)
-                let(opv=pv[edge[1]])
+               let(opv=pv[edge[1]])
                 [edge,  v + (opv - v)*ratio]
               ]
             : [[[i],v]]
          ]))
      let (newids = vertex_ids(newv))   
      let (newf = 
-          concat(
+          concat(    // truncated faces
              [for (face=pf)
-              flatten( [for (j=[0:len(face)-1])
+              flatten(
+              [for (j=[0:len(face)-1])
                let (a=face[j])
-               let (nv=vertex(a,newids)) 
+               let (nv=vertex([a],newids)) 
                nv != undef
                ?  nv   // not truncated, just renumbered
                :  let(b=face[(j+1)%len(face)],
-                      z=f[ace(j-1+len(face))%len(face)],
+                      z=face[(j-1+len(face))%len(face)],
                       eab=[a,b],
                       eaz=[a,z],
                       vab=vertex(eab,newids),
@@ -926,21 +927,21 @@ function trunc(obj,ratio=0.25,fn=[]) =
  
               ])
              ],
-          [for (i=[0:len(pv)-1]) 
-           let(v = pv[i])
+          [for (i=[0:len(pv)-1])   //  truncated  vertexes
            let(vf = vertex_faces(i,pf))
            if (selected_face(vf,fn))
               let(oe = ordered_vertex_edges(i,vf))     
-              [for (e=oe)
-               vertex(e,newids)
+              [for (edge=oe)
+               vertex(edge,newids)
              ]
           ] ) )    
 
      poly(name=str("t",poly_name(obj)),
           vertices= vertex_values(newv),
-          faces=newf
+          faces=newf,
+          debug=newids
          )
-;
+; // end trunc
 
 function propellor(obj,ratio=0.333) =
     let (pf=poly_faces(obj),
@@ -987,7 +988,7 @@ function propellor(obj,ratio=0.333) =
           vertices= concat(pv, vertex_values(newv)),
           faces=newf
      )         
-; 
+; // end propellor
      
 function chamfer(obj,ratio=0.333) =
     let (pf=poly_faces(obj),
@@ -1610,7 +1611,8 @@ scale(20)  poly_render(t,false,false,true);
 
 */
 
-s=shell(plane(chamfer(plane(chamfer(D)))),fn=[6]);
+s=shell(plane(trunc(plane(kis(plane(trunc(D)), fn=[10])), fn=[10])));
+// s=trunc(plane(kis(T)),fn=[3]);
 poly_print(s);
 poly_render(s,false,false,true);
 
