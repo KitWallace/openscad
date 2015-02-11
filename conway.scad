@@ -34,12 +34,16 @@ Done :
        insetkis(obj,ratio,height,fn)
        modulate(obj)  with global spherical function fmod()
        shell(obj,inset,height)
+       place(obj)  on largest face -use before shell
        
     canonicalization
        planar(obj,itr) -    planarization using reciprocals of centres
        canon(obj,itr) -     canonicalization using edge tangents
-       normalize() centre and scale
-    
+       normalize()   - centre and scale
+       orient(obj)  - ensure all faces have lhs order (only concave )
+         needed for some imported solids eg Georges solids and Johnson
+             and occasionally for David's
+       
     other 
        fun_knot to construct polyhedra from a function fknot()
        
@@ -47,8 +51,8 @@ to do
        whirl
        canon still fails on occasion 
        normalize removed from plane,canon - recursion problem ?
-   
-      last updated 10 Feb 2015 16:30
+       
+      last updated 11 Feb 2015 18:30
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -283,6 +287,20 @@ function face_areas(obj) =
           face_area(vadd(face_points,-centre))
    ];
 
+function face_areas_index(obj) =
+   [for (face=poly_faces(obj))
+       let(face_points = as_points(face,poly_vertices(obj)))
+       let(centre=centre(face_points))
+          [face,face_area(vadd(face_points,-centre))]
+   ];
+
+function max_area(areas, max=[undef,0], i=0) =
+   i <len(areas)
+      ? areas[i][1] > max[1]
+         ?  max_area(areas,areas[i],i+1)
+         :  max_area(areas,max,i+1)
+      : max[0];
+   
 function average_normal(fp) =
      let(fl=len(fp))
      let(unitns=
@@ -319,14 +337,16 @@ function face_analysis(faces) =
         [sides,count(sides,edge_counts)]
    ];
 
-function fev(faces) =
-    let(face_counts=face_analysis(faces))
-    let(fn=ssum([for (f = face_counts) f[1]]))
-    let(en=ssum([for (f=face_counts) f[0]*f[1]])/2)
-    let( vn= en - fn +2)
-    [fn,en,vn,face_counts]
-;
-    
+// ensure that all faces have a lhs orientation
+function cosine_between(u, v) =(u * v) / (norm(u) * norm(v));
+
+function lhs_faces(faces,vertices) =
+    [for (face = faces)
+     let(points = as_points(face,vertices))
+        cosine_between(normal(points), centre(points)) < 0
+        ?  reverse(face)  :  face
+    ];
+  
 // poly functions
 //  constructor
 function poly(name,vertices,faces,debug=[]) = 
@@ -942,8 +962,7 @@ function trunc(obj,ratio=0.25,fn=[]) =
 
      poly(name=str("t",poly_name(obj)),
           vertices= vertex_values(newv),
-          faces=newf,
-          debug=newids
+          faces=newf
          )
 ; // end trunc
 
@@ -1097,7 +1116,7 @@ function snub(obj,height=0.5) =
                       * m_rotate([0,0,r]) 
                       * m_translate([0,0,height]) 
                       * m_to(c,n))
-               [for (i=[0:len(f)-1]) 
+               [for (i=[0:len(face)-1]) 
                   [[face,face[i]], transform(fp[i],m)]
               ]
             ]))
@@ -1106,7 +1125,7 @@ function snub(obj,height=0.5) =
    let(newf =
          concat(
              [for (face = pf)   
-               [for (v = f) 
+               [for (v = face) 
                   vertex([face,v],newids)
                ]
               ],
@@ -1339,7 +1358,23 @@ function ptransform(obj,matrix) =
        name=str("T",poly_name(obj)),
        vertices=transform_points(poly_vertices(obj),matrix),
        faces=poly_faces(obj));
-              
+
+function place(obj) =
+// on largest face for printing
+   let (largest_face = max_area(face_areas_index(obj)))
+   let (points =as_points(largest_face,poly_vertices(obj)))
+   let (n = normal(points), c=centre(points))
+   let (m=m_from(c,-n))
+   ptransform(obj,m)
+;
+
+function orient(obj) =
+// ensure faces have lhs order
+    poly(name=str("!",poly_name(obj)),
+         vertices= poly_vertices(obj),
+         faces = lhs_faces(poly_faces(obj),poly_vertices(obj))
+    );
+ 
 //modulation
 
 function modulate_points(points) =
@@ -1392,27 +1427,6 @@ function modulate(obj) =
     )
 ;  // end modulate
 
-function face_def(f,pv) =
-     let(def= [for (fv = f) if(pv[fv] != []) 1 ])
-     len(def) == len (f);
-;
-
-function compact(obj) =
-    let (pf=poly_faces(obj))
-    let (pv=poly_vertices(obj))
-    let(cv=
-        [for (i=[0:len(pv)-1])
-            len(vertex_faces(i,pf))>0 ? i :[]
-        ])
-    let (map = non_null_map(cv))
-    poly(name=poly_name(obj),
-         vertices=remove_nulls(cv),
-         faces=
-           [for (face=pf)
-             remap(face,map)
-         ]
-     )
-;
 // generate points on the circumference of the tube  
 function circle_points(r, sides,phase=0) = 
     [for (i=[0:sides-1]) [r * sin(i*360/sides+phase), r * cos(i*360/sides+phase), 0]];
@@ -1615,9 +1629,15 @@ scale(20)  poly_render(t,false,false,true);
 
 */
 
+/*
 s=shell(plane(trunc(plane(kis(plane(trunc(D)), fn=[10])), fn=[10])));
 // s=trunc(plane(kis(T)),fn=[3]);
 poly_print(s);
 poly_render(s,false,false,true);
+*/
+
+s=snub(C);
+poly_print(s);
+scale(10) poly_render(s,false,false,true);
 
 // ruler(10);
