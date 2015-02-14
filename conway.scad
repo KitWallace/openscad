@@ -10,9 +10,10 @@ The project is being documented in my blog
 
 Done :
     poly object constructor 
-    poly accessors and renderers  (as 3d,description, print
-    )
-    primitives T,C,O,D,I,Y(n),P(n),A(n)
+    poly accessors and renderers  (as 3d object,description, full print, face and vertex analyses)
+    
+    primitives T(),C(),O(),D(),I(),Y(n),P(n),A(n)
+         variables replaced by functions to encapsulate constants and eliminate sequential problems with declarations
   
     operators 
        transform(obj,matrix)    matrix transformation of vertices
@@ -31,6 +32,8 @@ Done :
        join(obj)  == dual(ambo(obj)
        bevel(obj) == trunc(ambo(obj))
        chamfer(obj,ratio)
+       whirl(obj,ratio)
+       
        insetkis(obj,ratio,height,fn)
        modulate(obj)  with global spherical function fmod()
        shell(obj,outer_inset,inner_inset,height)
@@ -337,6 +340,16 @@ function face_analysis(faces) =
         [sides,count(sides,edge_counts)]
    ];
 
+function vertex_face_list(vertices,faces) =
+    [for (i=[0:len(vertices)-1])
+     let (vf= vertex_faces(i,faces))
+     len(vf)];
+    
+function vertex_analysis(vertices,faces) =
+  let (face_counts=vertex_face_list(vertices,faces))
+  [for (vo = distinct(face_counts))
+        [vo,count(vo,face_counts)]
+   ];
 // ensure that all faces have a lhs orientation
 function cosine_between(u, v) =(u * v) / (norm(u) * norm(v));
 
@@ -359,13 +372,15 @@ function poly_faces(obj) = obj[2];
 function poly_debug(obj)=obj[3];
 function poly_edges(obj) = distinct_edges(poly_faces(obj));
 function poly_description(obj) =
-      str(poly_name(obj),
-         ", ",str(len(poly_vertices(obj)), " Vertices" ),
+    str(poly_name(obj),
+         ", ",str(len(poly_vertices(obj)), " Vertices " ),
+         vertex_analysis(poly_vertices(obj), poly_faces(obj)),
          ", ",str(len(poly_faces(obj))," Faces "),
          face_analysis(poly_faces(obj)),
          " ",str(len(poly_non_planar_faces(obj))," not planar"),
           ", ",str(len(poly_edges(obj))," Edges ")
      ); 
+     
 function poly_faces_as_points(obj) =
     [for (f = poly_faces(obj))
         as_points(f,poly_vertices(obj))
@@ -423,11 +438,14 @@ module poly_render(obj,show_vertices=true,show_edges=true,show_faces=true, rv=0.
        show_edges(poly_edges(obj),poly_vertices(obj),re);
 };
 
+module poly_describe(obj){
+    echo(poly_description(obj));
+}
+
 module poly_print(obj) {
-    echo(poly_name(obj));
-    echo(str(len(poly_vertices(obj)), " Vertices " ,poly_vertices(obj)));
-    echo(str(len(poly_faces(obj))," Faces ", poly_faces(obj)));
-    echo("face analysis",face_analysis(poly_faces(obj)));
+    poly_describe(obj);
+    echo(" Vertices " ,poly_vertices(obj));
+    echo(" Faces ", poly_faces(obj));
     edges=poly_edges(obj);
     echo(str(len(edges)," Edges ",edges));
     non_planar=poly_non_planar_faces(obj);
@@ -445,16 +463,14 @@ function poly_scale(obj,scale) =
        faces = poly_faces(obj)
     );
     
-                    
-// primitive solids
-C0 = 0.809016994374947424102293417183;
-C1 = 1.30901699437494742410229341718;
-C2 = 0.7071067811865475244008443621048;
-T= poly(name= "T",
+
+function T()= 
+    poly(name= "T",
        vertices= [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
        faces= [[2,1,0],[3,2,0],[1,3,0],[2,3,1]]
     );
-C = poly(name= "C",
+function C() = 
+   poly(name= "C",
        vertices= [
 [ 0.5,  0.5,  0.5],
 [ 0.5,  0.5, -0.5],
@@ -474,14 +490,16 @@ C = poly(name= "C",
 [ 3 , 1, 5, 7]]
    );
 
-O = poly(name="O",
+function O() = 
+  let (C0 = 0.7071067811865475244008443621048)
+  poly(name="O",
          vertices=[
-[0.0, 0.0,  C2],
-[0.0, 0.0, -C2],
-[ C2, 0.0, 0.0],
-[-C2, 0.0, 0.0],
-[0.0,  C2, 0.0],
-[0.0, -C2, 0.0]],
+[0.0, 0.0,  C0],
+[0.0, 0.0, -C0],
+[ C0, 0.0, 0.0],
+[-C0, 0.0, 0.0],
+[0.0,  C0, 0.0],
+[0.0, -C0, 0.0]],
         faces= [
 [ 4 , 2, 0],
 [ 3 , 4, 0],
@@ -492,7 +510,10 @@ O = poly(name="O",
 [ 4 , 3, 1],
 [ 2 , 4, 1]]   
     );
-D = poly(name="D",
+function D() = 
+  let (C0 = 0.809016994374947424102293417183)
+  let (C1 = 0.7071067811865475244008443621048)
+    poly(name="D",
          vertices=[
 [ 0.0,  0.5,   C1],
 [ 0.0,  0.5,  -C1],
@@ -529,7 +550,9 @@ D = poly(name="D",
 [  1 ,  3, 15,  5, 13]]
    );
    
-I = poly(name= "I",
+function I() = 
+  let(C0 = 0.809016994374947424102293417183)
+  poly(name= "I",
          vertices= [
 [ 0.5,  0.0,   C0],
 [ 0.5,  0.0,  -C0],
@@ -565,6 +588,7 @@ I = poly(name= "I",
 [  1 ,  3, 11],
 [  9 ,  3,  1]]
 );
+
 
 function Y(n,h=1) =
    poly(name= str("Y",n) ,
@@ -1212,7 +1236,67 @@ function expand(obj,height=0.5) =
       )
          
 ; // end expand
-                
+
+function whirl(obj, ratio=0.3333, height=0.2) = 
+// retain original vertices, add directed edge points  and rotated inset points
+//  each edge  becomes 2 hexagons
+    let(pf=poly_faces(obj),
+        pv=poly_vertices(obj),
+        pe=poly_edges(obj))
+    let(newv= 
+          concat(          
+           flatten([for (face=pf)  // centres
+            let (fp=as_points(face,pv))
+            let (c = centre(fp))
+            [for (i=[0:len(face)-1])
+             let (f = face[i])
+             let (ep = [fp[i],fp[(i+1) % len(face)]])
+             let (mid =  ep[0]+ ratio*(ep[1]-ep[0])) 
+              [[face,f], mid + ratio * (c - mid)]
+           ]]) ,
+           flatten(      //  2 points per edge
+              [for (edge = pe)                 
+               let (ep = as_points(edge,pv))
+                   [ [ edge,  ep[0]+ ratio*(ep[1]-ep[0])],
+                     [ reverse(edge),  ep[1]+ ratio*(ep[0]-ep[1])]
+                   ]
+               ]         
+           ) 
+          ))
+    let(newids=vertex_ids(newv,len(pv)))
+    let(newf=concat(
+         flatten(                        // new faces are pentagons 
+         [for (face=pf)   
+             [for (j=[0:len(face)-1])
+                let (a=face[j],
+                     b=face[(j+1)%len(face)],
+                     c=face[(j+2)%len(face)],
+                     eab=vertex([a,b],newids),
+                     eba=vertex([b,a],newids),
+                     ebc=vertex([b,c],newids),
+                     mida=vertex([face,a],newids),                   
+                     midb=vertex([face,b],newids))                   
+                [eab,eba,b,ebc,midb,mida]  
+            ]
+         ]
+       )
+     ,
+        [for (face=pf)   
+             [for (j=[0:len(face)-1])
+                let (a=face[j])
+                vertex([face,a],newids)                  
+             ]
+         ]            
+        )) 
+               
+    poly(name=str("w",poly_name(obj)),
+      vertices=  concat(pv, vertex_values(newv)),
+      faces= newf,
+      debug=newv
+      )
+; // end whirl
+             
+            
 function reflect(obj) =
     poly(name=str("r",poly_name(obj)),
         vertices =
@@ -1494,10 +1578,10 @@ function fcardiod(t)=
      2*sin( t) - sin (2* t),
      0
    ];
-function sgn(x) =  x >0 ? 1 : -1;
+
 function fsuper(t,a,e) =
-    [pow(abs(cos(t)), 2/a)* sgn(cos(t)),	
-     e*pow(abs(sin(t)), 2/a)* sgn(sin(t)),
+    [pow(abs(cos(t)), 2/a)* sign(cos(t)),	
+     e*pow(abs(sin(t)), 2/a)* sign(sin(t)),
      0];
     
 function fknot(t) = ftrefoil(t);
@@ -1594,7 +1678,7 @@ function shell(obj,outer_inset=0.2,inner_inset=[],thickness=0.2,fn=[]) =
 //  superegg_ccD  - Goldberg (0,4) 
 function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.2);
          
-s= modulate(plane(chamfer(plane(chamfer(D)))));
+s= modulate(plane(chamfer(plane(chamfer(D())))));
 echo(poly_description(s));                    
 t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[6]);              
 scale(20)  poly_render(t,false,false,true);
@@ -1604,7 +1688,7 @@ scale(20)  poly_render(t,false,false,true);
 //  superegg_tktI  - Goldberg (3,3)  
 function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.2);
           
-s= modulate(plane(trunc(plane(kis(trunc(I))))));
+s= modulate(plane(trunc(plane(kis(trunc(I()))))));
 echo(poly_description(s));                    
 t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[6]);              
 scale(20)  poly_render(t,false,false,true);
@@ -1630,14 +1714,21 @@ scale(20)  poly_render(t,false,false,true);
 */
 
 /*
-s=shell(plane(trunc(plane(kis(plane(trunc(D)), fn=[10])), fn=[10])));
+s=shell(plane(trunc(plane(kis(plane(trunc(D())), fn=[10])), fn=[10])));
 // s=trunc(plane(kis(T)),fn=[3]);
 poly_print(s);
 poly_render(s,false,false,true);
 */
 
-s=snub(C);
+/*
+s=plane(propellor(dual(plane(trunc(C())))));
+poly_describe(s);
+scale(10) poly_render(shell(s),false,false,true);
+
+*/
+
+s=plane(whirl(plane(trunc(I()))));
 poly_print(s);
-scale(10) poly_render(s,false,false,true);
+ scale(10) poly_render(shell(s),false,false,true);
 
 // ruler(10);
