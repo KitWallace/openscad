@@ -3,6 +3,7 @@ A script to implement the Conway operations on Polyhedra.
 
 By Kit Wallace kit.wallace@gmail.com
 
+
 Code licensed under the Creative Commons - Attribution - Share Alike license.
 
 The project is being documented in my blog 
@@ -51,11 +52,8 @@ Done :
        fun_knot to construct polyhedra from a function fknot()
        
 to do
-       whirl
-       canon still fails on occasion 
-       normalize removed from plane,canon - recursion problem ?
-       
-      last updated 11 Feb 2015 18:30
+       canon still fails if face is extreme - use plane first
+       last updated 13 Feb 2015 23:30
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -706,9 +704,7 @@ function ndual(obj) =
                        n=average_normal(fp),
                        dotn = c*n,
                        ed=average_edge_distance(fp))
-                  abs(cdotn) <0.0000001
-                   ?   reciprocal(c)        // fallback to centre
-                   :   reciprocal(n*cdotn) * (1+ed)/2
+                  reciprocal(n*dotn) * (1+ed)/2
                 ]
            ,
            faces= poly_vertices_to_faces(obj)        
@@ -1727,8 +1723,14 @@ scale(10) poly_render(shell(s),false,false,true);
 
 */
 
+/*
 s=plane(whirl(plane(trunc(I()))));
 poly_print(s);
  scale(10) poly_render(shell(s),false,false,true);
+*/
+
+s=canon(plane(propellor(C())));
+poly_print(s);
+poly_render(s);
 
 // ruler(10);
