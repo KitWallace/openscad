@@ -712,9 +712,9 @@ function ndual(obj) =
            faces= poly_vertices_to_faces(obj)        
            );
                 
-function canon(obj,nc=1,np=5) = 
+function canon(obj,n=5) = 
     n > 0 
-       ? canon(ndual(ndual(plane(obj,np))),n-1)   
+       ? canon(ndual(ndual(obj,n-1)))   
        : poly(name=str("K",poly_name(obj)),
               vertices=poly_vertices(obj),
               faces=poly_faces(obj)
