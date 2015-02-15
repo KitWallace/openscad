@@ -3,6 +3,7 @@ A script to implement the Conway operations on Polyhedra.
 
 By Kit Wallace kit.wallace@gmail.com
 
+with thanks to George Hart whose javascript version http://www.georgehart.com/virtual-polyhedra/conway_notation.html was the inspiration for this work.
 
 Code licensed under the Creative Commons - Attribution - Share Alike license.
 
@@ -53,7 +54,7 @@ Done :
        
 to do
        canon still fails if face is extreme - use plane first
-       last updated 13 Feb 2015 23:30
+       last updated 15 Feb 2015 14.30
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -511,6 +512,7 @@ function O() =
 function D() = 
   let (C0 = 0.809016994374947424102293417183)
   let (C1 =1.30901699437494742410229341718)
+
     poly(name="D",
          vertices=[
 [ 0.0,  0.5,   C1],
@@ -706,13 +708,13 @@ function ndual(obj) =
                        ed=average_edge_distance(fp))
                   reciprocal(n*dotn) * (1+ed)/2
                 ]
-           ,
+           ,  
            faces= poly_vertices_to_faces(obj)        
            );
                 
-function canon(obj,n=1) = 
+function canon(obj,nc=1,np=5) = 
     n > 0 
-       ? canon(ndual(ndual(obj)),n-1)   
+       ? canon(ndual(ndual(plane(obj,np))),n-1)   
        : poly(name=str("K",poly_name(obj)),
               vertices=poly_vertices(obj),
               faces=poly_faces(obj)
@@ -852,7 +854,8 @@ function meta(obj,height=0.1) =
                let (a=face[j],
                     b=face[(j+1)%len(face)],
                     mid=vertex(distinct_edge([a,b]),newids))
-                 [ [ mid, centre, a], [b,centre, mid] ]  
+                 [ [ mid, centre, a],
+                    [b,centre, mid] ]  
                  ] )
          ])
       )   
@@ -1352,7 +1355,8 @@ function qt(obj) =
 ;// end qt
            
 function tt(obj) =
-// triangulate triangular faces - works if all faces are triangular
+// replace triangular faces with 4 triangles  
+// requires  all faces to be triangular
   let (pf=poly_faces(obj),
        pv=poly_vertices(obj),
        pe=poly_edges(obj))
@@ -1455,6 +1459,18 @@ function orient(obj) =
          faces = lhs_faces(poly_faces(obj),poly_vertices(obj))
     );
  
+ 
+function invert(obj,p) =
+// ensure faces have lhs order
+    poly(name=str(":",poly_name(obj)),
+         vertices= 
+            [ for (v =poly_vertices(obj))
+              let (n=norm(v))
+              v /  pow(n,p)  
+            ],
+         faces = poly_faces(obj)
+    );
+ 
 //modulation
 
 function modulate_points(points) =
@@ -1490,11 +1506,16 @@ function fbauble(r,theta,phi) =
 
 function fellipsoid(r,theta,phi,e) = [r*(1.0+pow(e*cos(theta),2)),theta,phi] ;
   
-function fsuperegg(r,theta,phi,n,e) =
-      [ r* (pow(
-               pow(abs(cos(theta)),n) 
-           + e*pow(abs(sin(theta)),n)
-            ,-1/n))
+function fsuperegg(r,theta,phi,nt,et=1,np,ep=1) =
+       [ r* (pow(
+               pow(abs(cos(theta)),nt) 
+           + et*pow(abs(sin(theta)),nt)
+            ,-1/nt))
+            
+         * (pow(
+               pow(abs(cos(phi)),np) 
+           + ep*pow(abs(sin(phi)),np)
+            ,-1/np))
          ,theta,phi];
  
 function modulate(obj) =
@@ -1591,12 +1612,16 @@ module ruler(n) {
        translate([(i-n/2 +0.5)* 10,0,0]) cube([9.8,5,2], center=true);
 }
 
-module ground(x=0) {
-   translate([0,0,-(100+x)]) cube(200,center=true);
-}    
+module ground(s=200) {
+   translate([0,0,-s/2]) cube(s,center=true);
+} 
 
-function shell(obj,outer_inset=0.2,inner_inset=[],thickness=0.2,fn=[]) = 
-   let(inner_inset= inner_inset == [] ? outer_inset : inner_inset,
+module sky(s=200) {
+   rotate([0,180,0]) ground(s);
+}
+
+function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) = 
+   let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
        pf=poly_faces(obj),           
        pv=poly_vertices(obj))
 
@@ -1627,7 +1652,7 @@ function shell(obj,outer_inset=0.2,inner_inset=[],thickness=0.2,fn=[]) =
                          op= ofp[i],
                          ip = p + (c-p)*outer_inset,
                          oip = op + (oc-op)*inner_inset)
-                     [ [[face,v],ip],[[face,-v],oip]]
+                     [ [[face,v],ip],[[face,-v-1],oip]]
                     ])
              ])          
            )
@@ -1641,10 +1666,10 @@ function shell(obj,outer_inset=0.2,inner_inset=[],thickness=0.2,fn=[]) =
                 ? [for (j=[0:len(face)-1])   //  replace N-face with 3*N quads 
                   let (a=face[j],
                        inseta = vertex([face,a],newids),
-                       oinseta= vertex([face,-a],newids),
+                       oinseta= vertex([face,-a-1],newids),
                        b=face[(j+1)%len(face)],
                        insetb= vertex([face,b],newids),
-                       oinsetb=vertex([face,-b],newids),
+                       oinsetb=vertex([face,-b-1],newids),
                        oa=len(pv) + a,
                        ob=len(pv) + b) 
                   
@@ -1666,19 +1691,10 @@ function shell(obj,outer_inset=0.2,inner_inset=[],thickness=0.2,fn=[]) =
                            
    poly(name=str("x",poly_name(obj)),
        vertices=  concat(pv, inv, vertex_values(newv)) ,    
-       faces= newf           
+       faces= newf,
+       debug=newids          
        )
 ; // end shell  
-
-/*
-//  superegg_ccD  - Goldberg (0,4) 
-function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.2);
-         
-s= modulate(plane(chamfer(plane(chamfer(D())))));
-echo(poly_description(s));                    
-t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[6]);              
-scale(20)  poly_render(t,false,false,true);
-*/
 
 /*
 //  superegg_tktI  - Goldberg (3,3)  
@@ -1729,8 +1745,12 @@ poly_print(s);
  scale(10) poly_render(shell(s),false,false,true);
 */
 
-s=canon(plane(propellor(C())));
-poly_print(s);
-poly_render(s);
+function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.4,1,2,1);         
+
+ s=modulate(plane(dual(plane(tt(plane(tt(plane(tt(I())))))))));
+ poly_describe(s);
+ t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[]);
+ scale(20) poly_render(t,false,false,true);
+ 
 
 // ruler(10);
