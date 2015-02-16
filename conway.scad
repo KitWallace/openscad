@@ -76,6 +76,11 @@ function m_translate(v) = [ [1, 0, 0, 0],
                             [0, 1, 0, 0],
                             [0, 0, 1, 0],
                             [v.x, v.y, v.z, 1  ] ];
+
+function m_scale(v) =    [ [v.x, 0, 0, 0],
+                            [0, v.y, 0, 0],
+                            [0, 0, v.z, 0],
+                            [0, 0, 0, 1  ] ];
                             
 function m_rotate(v) =  [ [1,  0,         0,        0],
                           [0,  cos(v.x),  sin(v.x), 0],
@@ -91,10 +96,8 @@ function m_rotate(v) =  [ [1,  0,         0,        0],
                           [ 0,         0,        0, 1] ];
                             
 function vec3(v) = [v.x, v.y, v.z];
-function transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
-function transform_points(ps,m) =
-   [for (p=ps) transform(p,m)];
-       
+function m_transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
+
 function m_to(centre,normal) = 
       m_rotate([0, atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]) 
     * m_rotate([0, 0, atan2(normal[1], normal[0])]) 
@@ -187,7 +190,7 @@ function average_norm(points) =
        ssum(vnorm(points)) / len(points);
 
 function transform_points(points, matrix) = 
-    [for (p=points) transform(p, matrix) ] ;
+    [for (p=points) m_transform(p, matrix) ] ;
    
 // vertex functions
     
@@ -253,7 +256,7 @@ function distinct_edges(faces) =
       
 function check_euler(obj) =
      //  E = V + F -2    
-    len(poly_vertices(obj)) + len(poly_faces(obj)) - 2
+    len(p_vertices(obj)) + len(p_faces(obj)) - 2
            ==  len(distinct_edges(obj[2]));
          
 function edge_lengths(edges,points) =
@@ -285,15 +288,15 @@ function face_area(face) =
            triangle(face[i], face[(i+1)%len(face)]) ]);
 
 function face_areas(obj) =
-   [for (f=poly_faces(obj))
-       let(face_points = as_points(f,poly_vertices(obj)))
+   [for (f=p_faces(obj))
+       let(face_points = as_points(f,p_vertices(obj)))
        let(centre=centre(face_points))
           face_area(vadd(face_points,-centre))
    ];
 
 function face_areas_index(obj) =
-   [for (face=poly_faces(obj))
-       let(face_points = as_points(face,poly_vertices(obj)))
+   [for (face=p_faces(obj))
+       let(face_points = as_points(face,p_vertices(obj)))
        let(centre=centre(face_points))
           [face,face_area(vadd(face_points,-centre))]
    ];
@@ -367,47 +370,47 @@ function poly(name,vertices,faces,debug=[]) =
     [name,vertices,faces,debug];
     
 // accessors
-function poly_name(obj) = obj[0];
-function poly_vertices(obj) = obj[1];
-function poly_faces(obj) = obj[2];
-function poly_debug(obj)=obj[3];
-function poly_edges(obj) = distinct_edges(poly_faces(obj));
-function poly_description(obj) =
-    str(poly_name(obj),
-         ", ",str(len(poly_vertices(obj)), " Vertices " ),
-         vertex_analysis(poly_vertices(obj), poly_faces(obj)),
-         ", ",str(len(poly_faces(obj))," Faces "),
-         face_analysis(poly_faces(obj)),
-         " ",str(len(poly_non_planar_faces(obj))," not planar"),
-          ", ",str(len(poly_edges(obj))," Edges ")
+function p_name(obj) = obj[0];
+function p_vertices(obj) = obj[1];
+function p_faces(obj) = obj[2];
+function p_debug(obj)=obj[3];
+function p_edges(obj) = distinct_edges(p_faces(obj));
+function p_description(obj) =
+    str(p_name(obj),
+         ", ",str(len(p_vertices(obj)), " Vertices " ),
+         vertex_analysis(p_vertices(obj), p_faces(obj)),
+         ", ",str(len(p_faces(obj))," Faces "),
+         face_analysis(p_faces(obj)),
+         " ",str(len(p_non_planar_faces(obj))," not planar"),
+          ", ",str(len(p_edges(obj))," Edges ")
      ); 
      
-function poly_faces_as_points(obj) =
-    [for (f = poly_faces(obj))
-        as_points(f,poly_vertices(obj))
+function p_faces_as_points(obj) =
+    [for (f = p_faces(obj))
+        as_points(f,p_vertices(obj))
     ];
     
-function poly_non_planar_faces(obj,tolerance=0.001) =
-     [for (face = poly_faces(obj))
+function p_non_planar_faces(obj,tolerance=0.001) =
+     [for (face = p_faces(obj))
          if (len(face) >3)
-             let (points = as_points(face,poly_vertices(obj)))
+             let (points = as_points(face,p_vertices(obj)))
              let (error=face_coplanarity(points))
              if (error>tolerance) 
                  [tolerance,face]
      ];
              
-function poly_irregular_faces(obj,tolerance=0.01) =
-     [for (face = poly_faces(obj))
-         let(ir=face_irregularity(face,poly_vertices(obj)))
+function p_irregular_faces(obj,tolerance=0.01) =
+     [for (face = p_faces(obj))
+         let(ir=face_irregularity(face,p_vertices(obj)))
          if(abs(ir-1)>tolerance)
                [ir,face]
       ];
              
-function poly_vertices_to_faces(obj)=
-    [for (vi = [0:len(poly_vertices(obj))-1])    // each old vertex creates a new face, with 
-       let (vf=vertex_faces(vi,poly_faces(obj)))   // vertex faces in left-hand order    
+function p_vertices_to_faces(obj)=
+    [for (vi = [0:len(p_vertices(obj))-1])    // each old vertex creates a new face, with 
+       let (vf=vertex_faces(vi,p_faces(obj)))   // vertex faces in left-hand order    
        [for (of = ordered_vertex_faces(vi,vf))
-              index_of(of,poly_faces(obj))    
+              index_of(of,p_faces(obj))    
        ]
     ];
        
@@ -430,42 +433,30 @@ module show_edges(edges,points,r=0.1) {
         show_edge(as_points(edge, points), r); 
 };
         
-module poly_render(obj,show_vertices=true,show_edges=true,show_faces=true, rv=0.04, re=0.02) {
+module p_render(obj,show_vertices=true,show_edges=true,show_faces=true, rv=0.04, re=0.02) {
      if(show_faces) 
-          polyhedron(poly_vertices(obj),poly_faces(obj),convexity=10);
+          polyhedron(p_vertices(obj),p_faces(obj),convexity=10);
      if(show_vertices) 
-         show_points(poly_vertices(obj),rv);
+         show_points(p_vertices(obj),rv);
      if(show_edges)
-       show_edges(poly_edges(obj),poly_vertices(obj),re);
+       show_edges(p_edges(obj),p_vertices(obj),re);
 };
 
-module poly_describe(obj){
-    echo(poly_description(obj));
+module p_describe(obj){
+    echo(p_description(obj));
 }
 
-module poly_print(obj) {
-    poly_describe(obj);
-    echo(" Vertices " ,poly_vertices(obj));
-    echo(" Faces ", poly_faces(obj));
-    edges=poly_edges(obj);
+module p_print(obj) {
+    p_describe(obj);
+    echo(" Vertices " ,p_vertices(obj));
+    echo(" Faces ", p_faces(obj));
+    edges=p_edges(obj);
     echo(str(len(edges)," Edges ",edges));
-    non_planar=poly_non_planar_faces(obj);
+    non_planar=p_non_planar_faces(obj);
     echo(str(len(non_planar)," faces are not planar", non_planar));
-    debug=poly_debug(obj);
+    debug=p_debug(obj);
     if(debug!=[]) echo("Debug",debug);
 };
-
-function poly_resize(obj,size) =
-   poly(name=str("scale",poly_name(obj)),
-        vertices =
-           [for (v = poly_vertices(obj))
-                len(size)==3 
-                   ? hadamard(v / norm(v) ,size)
-                   : v * size /norm(v)
-           ],
-       faces = poly_faces(obj)
-    );
-    
 
 function T()= 
     poly(name= "T",
@@ -662,10 +653,10 @@ function sphericalize(points,radius=1) =
        p* radius/ norm(p)
    ];
 
-function poly_sphericalize(obj,radius=1) =
-    poly(name=str("n",poly_name(obj)),
-         vertices=sphericalize(poly_vertices(obj),radius),
-         faces=poly_faces(obj)
+function p_sphericalize(obj,radius=1) =
+    poly(name=str("n",p_name(obj)),
+         vertices=sphericalize(p_vertices(obj),radius),
+         faces=p_faces(obj)
    );
    
 //scale to average radius = radius
@@ -674,37 +665,37 @@ function normalize(points,radius=1) =
         an=average_norm(ps))
     ps * radius /an;
 
-function poly_normalize(obj,radius=1) =
-    poly(name=str("n",poly_name(obj)),
-         vertices=normalize(poly_vertices(obj),radius),
-         faces=poly_faces(obj)
+function p_normalize(obj,radius=1) =
+    poly(name=str("n",p_name(obj)),
+         vertices=normalize(p_vertices(obj),radius),
+         faces=p_faces(obj)
    );
       
 function rdual(obj) =
-    let(np=poly_vertices(obj))
-    poly(name=poly_name(obj),
+    let(np=p_vertices(obj))
+    poly(name=p_name(obj),
            vertices =
-                [ for (f=poly_faces(obj))
+                [ for (f=p_faces(obj))
                   let (c=centre(as_points(f,np)))
                      reciprocal(c)
                 ]
            ,
-           faces= poly_vertices_to_faces(obj)  
+           faces= p_vertices_to_faces(obj)  
            );
           
 function plane(obj,n=5) = 
     n > 0 
        ? plane(rdual(rdual(obj)),n-1)   
-       : poly(name=str("P",poly_name(obj)),
-              vertices=poly_vertices(obj),
-              faces=poly_faces(obj)
+       : poly(name=str("P",p_name(obj)),
+              vertices=p_vertices(obj),
+              faces=p_faces(obj)
              );
 
 function ndual(obj) =
-      let(np=poly_vertices(obj))
-      poly(name=poly_name(obj),
+      let(np=p_vertices(obj))
+      poly(name=p_name(obj),
            vertices =
-                [ for (f=poly_faces(obj))
+                [ for (f=p_faces(obj))
                   let (fp=as_points(f,np),
                        c=centre(fp),
                        n=average_normal(fp),
@@ -713,25 +704,25 @@ function ndual(obj) =
                   reciprocal(n*dotn) * (1+ed)/2
                 ]
            ,  
-           faces= poly_vertices_to_faces(obj)        
+           faces= p_vertices_to_faces(obj)        
            );
                 
 function canon(obj,n=5) = 
     n > 0 
        ? canon(ndual(ndual(obj,n-1)))   
-       : poly(name=str("K",poly_name(obj)),
-              vertices=poly_vertices(obj),
-              faces=poly_faces(obj)
+       : poly(name=str("K",p_name(obj)),
+              vertices=p_vertices(obj),
+              faces=p_faces(obj)
              );   
              
 function dual(obj) =
-    poly(name=str("d",poly_name(obj)),
+    poly(name=str("d",p_name(obj)),
          vertices = 
-              [for (f = poly_faces(obj))
-               let(fp=as_points(f,poly_vertices(obj)))
+              [for (f = p_faces(obj))
+               let(fp=as_points(f,p_vertices(obj)))
                  centre(fp)  
               ],
-         faces= poly_vertices_to_faces(obj)        
+         faces= p_vertices_to_faces(obj)        
         )
 ;  // end dual
               
@@ -757,8 +748,8 @@ function kis(obj,height=0.1, fn=[]) =
 // kis each n-face is divided into n triangles which extend to the face centre
 // existimg vertices retained
               
-   let(pf=poly_faces(obj),
-       pv=poly_vertices(obj))
+   let(pf=p_faces(obj),
+       pv=p_vertices(obj))
    let(newv=   // new centroid vertices    
         [for (f=pf)
          if (selected_face(f,fn))                      
@@ -781,19 +772,18 @@ function kis(obj,height=0.1, fn=[]) =
          ]) 
         )         
   
-   poly(name=str("k",poly_name(obj)),
+   poly(name=str("k",p_name(obj)),
        vertices= concat(pv, vertex_values(newv)) , 
        faces=newf
    )
 ; // end kis
 
-
 function gyro(obj, ratio=0.3333, height=0.2) = 
 // retain original vertices, add face centres and directed edge points 
 //  each N-face becomes N pentagons
-    let(pf=poly_faces(obj),
-        pv=poly_vertices(obj),
-        pe=poly_edges(obj))
+    let(pf=p_faces(obj),
+        pv=p_vertices(obj),
+        pe=p_edges(obj))
     let(newv= 
           concat(
            [for (face=pf)  // centres
@@ -826,7 +816,7 @@ function gyro(obj, ratio=0.3333, height=0.2) =
          ]
        )) 
                
-    poly(name=str("g",poly_name(obj)),
+    poly(name=str("g",p_name(obj)),
       vertices=  concat(pv, vertex_values(newv)),
       faces= newf
       )
@@ -835,9 +825,9 @@ function gyro(obj, ratio=0.3333, height=0.2) =
             
 function meta(obj,height=0.1) =
 // each face is replaced with 2n triangles based on edge midpoint and centre
-    let(pe=poly_edges(obj),
-        pf=poly_faces(obj),
-        pv=poly_vertices(obj))
+    let(pe=p_edges(obj),
+        pf=p_faces(obj),
+        pv=p_vertices(obj))
     let (newv =concat(
            [for (face = pf)               // new centre vertices
             let (fp=as_points(face,pv))
@@ -864,7 +854,7 @@ function meta(obj,height=0.1) =
          ])
       )   
                
-     poly(name=str("m",poly_name(obj)),
+     poly(name=str("m",p_name(obj)),
           vertices= concat(pv,vertex_values(newv)),                
           faces=newf
       ) 
@@ -872,9 +862,9 @@ function meta(obj,height=0.1) =
 
 function pyra(obj,height=0.1) =   
 // very like meta but different triangles
-    let(pe=poly_edges(obj),
-        pf=poly_faces(obj),
-        pv=poly_vertices(obj))
+    let(pe=p_edges(obj),
+        pf=p_faces(obj),
+        pv=p_vertices(obj))
     let(newv=concat(
           [for (face = pf)               // new centre vertices
             let(fp=as_points(face,pv))
@@ -898,7 +888,7 @@ function pyra(obj,height=0.1) =
              ])
           ] ))
               
-     poly(name=str("y",poly_name(obj)),
+     poly(name=str("y",p_name(obj)),
           vertices= concat(pv, vertex_values(newv)),
           faces=newf
      )
@@ -906,9 +896,9 @@ function pyra(obj,height=0.1) =
                                  
 function ortho(obj,height=0.2) =  
 // very like meta but divided into quadrilaterals
-    let (pe=poly_edges(obj),
-         pf=poly_faces(obj),
-         pv=poly_vertices(obj))
+    let (pe=p_edges(obj),
+         pf=p_faces(obj),
+         pv=p_vertices(obj))
 
      let(newv=concat(
           [for (face = pf)               // new centre vertices
@@ -935,15 +925,15 @@ function ortho(obj,height=0.2) =
              ]
           ] ))
       
-     poly(name=str("o",poly_name(obj)),
+     poly(name=str("o",p_name(obj)),
           vertices= concat(pv, vertex_values(newv)),
           faces=newf
      )
 ; // end ortho
        
 function trunc(obj,ratio=0.25,fn=[]) =
-    let (pv=poly_vertices(obj),
-         pf=poly_faces(obj))
+    let (pv=p_vertices(obj),
+         pf=p_faces(obj))
                
     let (newv = 
         flatten(
@@ -987,16 +977,16 @@ function trunc(obj,ratio=0.25,fn=[]) =
              ]
           ] ) )    
 
-     poly(name=str("t",poly_name(obj)),
+     poly(name=str("t",p_name(obj)),
           vertices= vertex_values(newv),
           faces=newf
          )
 ; // end trunc
 
 function propellor(obj,ratio=0.333) =
-    let (pf=poly_faces(obj),
-         pv=poly_vertices(obj),
-         pe=poly_edges(obj))
+    let (pf=p_faces(obj),
+         pv=p_vertices(obj),
+         pe=p_edges(obj))
     let(newv=
          flatten(      //  2 points per edge
               [for (edge = pe)                 
@@ -1034,15 +1024,15 @@ function propellor(obj,ratio=0.333) =
              ])            
            )
        )        
-     poly(name=str("p",poly_name(obj)),
+     poly(name=str("p",p_name(obj)),
           vertices= concat(pv, vertex_values(newv)),
           faces=newf
      )         
 ; // end propellor
      
 function chamfer(obj,ratio=0.333) =
-    let (pf=poly_faces(obj),
-         pv=poly_vertices(obj))  
+    let (pf=p_faces(obj),
+         pv=p_vertices(obj))  
     let(newv=              
           flatten(         //  face inset
           [for(face=pf)
@@ -1080,7 +1070,7 @@ function chamfer(obj,ratio=0.333) =
                ]
              ])            
            ))  
-    poly(name=str("c",poly_name(obj)),
+    poly(name=str("c",p_name(obj)),
       vertices=
         concat( 
           [for (v = pv)  (1.0-ratio)*v],             // original        
@@ -1092,9 +1082,9 @@ function chamfer(obj,ratio=0.333) =
               
               
 function ambo(obj) =
-  let (pf=poly_faces(obj),
-       pv=poly_vertices(obj),
-       pe=poly_edges(obj))
+  let (pf=p_faces(obj),
+       pv=p_vertices(obj),
+       pe=p_edges(obj))
   
           
   let(newv=
@@ -1122,15 +1112,15 @@ function ambo(obj) =
           )) 
            
            
-  poly(name=str("a",poly_name(obj)),
+  poly(name=str("a",p_name(obj)),
        vertices = vertex_values(newv),  
        faces =  newf
        )
 ;// end ambo    
        
 function snub(obj,height=0.5) = 
-   let(pf=poly_faces(obj),   
-       pv=poly_vertices(obj)  )       
+   let(pf=p_faces(obj),   
+       pv=p_vertices(obj)  )       
        
    let(newv =
           flatten(
@@ -1144,7 +1134,7 @@ function snub(obj,height=0.5) =
                       * m_translate([0,0,height]) 
                       * m_to(c,n))
                [for (i=[0:len(face)-1]) 
-                  [[face,face[i]], transform(fp[i],m)]
+                  [[face,face[i]], m_transform(fp[i],m)]
               ]
             ]))
    
@@ -1182,15 +1172,15 @@ function snub(obj,height=0.5) =
                 ])     
           ))      
             
-   poly(name=str("s",poly_name(obj)),
+   poly(name=str("s",p_name(obj)),
        vertices= vertex_values(newv),
        faces=newf
        )
 ; // end snub
    
 function expand(obj,height=0.5) =                    
-   let(pf=poly_faces(obj),           
-       pv=poly_vertices(obj))        
+   let(pf=p_faces(obj),           
+       pv=p_vertices(obj))        
    let(newv=
            flatten(
             [for (face = pf)     //move the whole face outwards
@@ -1201,7 +1191,7 @@ function expand(obj,height=0.5) =
                       *  m_translate([0,0,height]) 
                       * m_to(c,n))
              [for (i=[0:len(face)-1]) 
-                  [[face,face[i]], transform(fp[i],m)]
+                  [[face,face[i]], m_transform(fp[i],m)]
              ]
              ]))
    let(newids=vertex_ids(newv))
@@ -1233,7 +1223,7 @@ function expand(obj,height=0.5) =
                 ] )           
               ))
                    
-   poly(name=str("e",poly_name(obj)),
+   poly(name=str("e",p_name(obj)),
        vertices= vertex_values(newv),
        faces=newf
       )
@@ -1243,9 +1233,9 @@ function expand(obj,height=0.5) =
 function whirl(obj, ratio=0.3333, height=0.2) = 
 // retain original vertices, add directed edge points  and rotated inset points
 //  each edge  becomes 2 hexagons
-    let(pf=poly_faces(obj),
-        pv=poly_vertices(obj),
-        pe=poly_edges(obj))
+    let(pf=p_faces(obj),
+        pv=p_vertices(obj),
+        pe=p_edges(obj))
     let(newv= 
           concat(          
            flatten([for (face=pf)  // centres
@@ -1292,7 +1282,7 @@ function whirl(obj, ratio=0.3333, height=0.2) =
          ]            
         )) 
                
-    poly(name=str("w",poly_name(obj)),
+    poly(name=str("w",p_name(obj)),
       vertices=  concat(pv, vertex_values(newv)),
       faces= newf,
       debug=newv
@@ -1301,53 +1291,53 @@ function whirl(obj, ratio=0.3333, height=0.2) =
              
             
 function reflect(obj) =
-    poly(name=str("r",poly_name(obj)),
+    poly(name=str("r",p_name(obj)),
         vertices =
-          [for (p = poly_vertices(obj))
+          [for (p = p_vertices(obj))
               [p.x,-p.y,p.z]
           ],
         faces=  // reverse the winding order 
-          [ for (face =poly_faces(obj))
+          [ for (face =p_faces(obj))
               reverse(face)
           ]
     )
 ;  // end reflect
           
 function join(obj) =
-    let(name=poly_name(obj))
+    let(name=p_name(obj))
     let(p = dual(ambo(obj)))
     poly(name=str("j",name),
-         vertices =poly_vertices(p),         
-         faces= poly_faces(p)
+         vertices =p_vertices(p),         
+         faces= p_faces(p)
     )
 ;  // end join 
           
 function bevel(obj) =
-    let(name=poly_name(obj))
+    let(name=p_name(obj))
     let(p = trunc(ambo(obj)))
     poly(name=str("b",name),
-         vertices =poly_vertices(p),         
-         faces= poly_faces(p)
+         vertices =p_vertices(p),         
+         faces= p_faces(p)
     )
 ;  // end bevel
 
 function random(obj,offset=0.1) =
-    poly(name=str("x",poly_name(obj)),
+    poly(name=str("x",p_name(obj)),
          vertices =
-          [for (v = poly_vertices(obj))
+          [for (v = p_vertices(obj))
              v + rands(0,offset,3)
           ],
-        faces= poly_faces(obj)
+        faces= p_faces(obj)
      )
 ; 
 
 function qt(obj) =
 // triangulate quadrilateral faces
-  let (pf=poly_faces(obj),
-       pv=poly_vertices(obj),
-       pe=poly_edges(obj))
+  let (pf=p_faces(obj),
+       pv=p_vertices(obj),
+       pe=p_edges(obj))
            
-  poly(name=str("u",poly_name(obj)),
+  poly(name=str("u",p_name(obj)),
        vertices=pv,          
        faces= flatten(
            [for (f = pf)
@@ -1361,9 +1351,9 @@ function qt(obj) =
 function tt(obj) =
 // replace triangular faces with 4 triangles  
 // requires  all faces to be triangular
-  let (pf=poly_faces(obj),
-       pv=poly_vertices(obj),
-       pe=poly_edges(obj))
+  let (pf=p_faces(obj),
+       pv=p_vertices(obj),
+       pe=p_edges(obj))
   
   let (newv=  // edge mid points 
        [for (edge=pe)
@@ -1391,7 +1381,7 @@ function tt(obj) =
                   ])         
            ]))
 
-  poly(name=str("u",poly_name(obj)),
+  poly(name=str("u",p_name(obj)),
        vertices=
            concat(pv, vertex_values(newv)),  
        faces= newf
@@ -1400,9 +1390,9 @@ function tt(obj) =
 
 function inset_kis(obj,ratio=0.5,height=-0.1, fn=[]) = 
  // as kis but pyramids inset in the face 
-    let (pe=poly_edges(obj),
-         pf=poly_faces(obj),
-         pv=poly_vertices(obj))
+    let (pe=p_edges(obj),
+         pf=p_faces(obj),
+         pv=p_vertices(obj))
      
     let(newv =
          flatten(  
@@ -1435,49 +1425,49 @@ function inset_kis(obj,ratio=0.5,height=-0.1, fn=[]) =
               : [ face ]
          ] ))       
    
-    poly(name=str("x",poly_name(obj)),
+    poly(name=str("x",p_name(obj)),
       vertices=  concat(pv, vertex_values(newv)) ,
       faces= newf
     )
 ;   // end inset_kis
                
-function ptransform(obj,matrix) =
+function transform(obj,matrix) =
    poly(
-       name=str("T",poly_name(obj)),
-       vertices=transform_points(poly_vertices(obj),matrix),
-       faces=poly_faces(obj));
+       name=str("T",p_name(obj)),
+       vertices=transform_points(p_vertices(obj),matrix),
+       faces=p_faces(obj));
 
 function place(obj) =
 // on largest face for printing
    let (largest_face = max_area(face_areas_index(obj)))
-   let (points =as_points(largest_face,poly_vertices(obj)))
+   let (points =as_points(largest_face,p_vertices(obj)))
    let (n = normal(points), c=centre(points))
    let (m=m_from(c,-n))
-   ptransform(obj,m)
+   transform(obj,m)
 ;
 
 function orient(obj) =
 // ensure faces have lhs order
-    poly(name=str("!",poly_name(obj)),
-         vertices= poly_vertices(obj),
-         faces = lhs_faces(poly_faces(obj),poly_vertices(obj))
+    poly(name=str("O",p_name(obj)),
+         vertices= p_vertices(obj),
+         faces = lhs_faces(p_faces(obj),p_vertices(obj))
     );
  
 function invert(obj,p) =
 // invert vertices 
-    poly(name=str(":",poly_name(obj)),
+    poly(name=str("I",p_name(obj)),
          vertices= 
-            [ for (v =poly_vertices(obj))
+            [ for (v =p_vertices(obj))
               let (n=norm(v))
               v /  pow(n,p)  
             ],
-         faces = poly_faces(obj)
+         faces = p_faces(obj)
     );
  
 function crop(obj,minz=-100,maxz=+100) =
 // crop polyhedron to min max z height 
-    let (pv=poly_vertices(obj),
-         pf=poly_faces(obj))
+    let (pv=p_vertices(obj),
+         pf=p_faces(obj))
     let (newv =  [for (i=[0:len(pv)-1] )
                   let(v = pv[i])
                   if (v.z >= minz && v.z <= maxz)
@@ -1503,7 +1493,7 @@ function crop(obj,minz=-100,maxz=+100) =
                      vertex([v],newids2)
                    ]
                 ])
-    poly(name=str("X",poly_name(obj)),
+    poly(name=str("X",p_name(obj)),
          vertices= vertex_values(newv2),
          faces=newf2,
          debug=newids2)
@@ -1514,8 +1504,8 @@ function crop(obj,minz=-100,maxz=+100) =
 
 function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) = 
    let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
-       pf=poly_faces(obj),           
-       pv=poly_vertices(obj))
+       pf=p_faces(obj),           
+       pv=p_vertices(obj))
 
    let(inv=   // corresponding points on inner surface
        [for (i =[0:len(pv)-1])
@@ -1583,7 +1573,7 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) =
                )
          ] ))    
                            
-   poly(name=str("x",poly_name(obj)),
+   poly(name=str("S",p_name(obj)),
        vertices=  concat(pv, inv, vertex_values(newv)) ,    
        faces= newf,
        debug=newids          
@@ -1635,10 +1625,10 @@ function fsuperegg(r,theta,phi,nt,et=1,np,ep=1) =
          ,theta,phi];
  
 function modulate(obj) =
-    poly(name=str("S",poly_name(obj)),
-         vertices=modulate_points(poly_vertices(obj)),         
+    poly(name=str("S",p_name(obj)),
+         vertices=modulate_points(p_vertices(obj)),         
          faces= 
-          [ for (face =poly_faces(obj))
+          [ for (face =p_faces(obj))
               reverse(face)
           ]
     )
@@ -1659,7 +1649,7 @@ function tube_points(loop, circle_points) =
             n0=loop[i]-loop[(i - 1 +len(loop)) % len(loop)],
             m = m_to(loop[i], (n0+n1)))
        for (p = circle_points) 
-          transform(p,m)
+          m_transform(p,m)
     ];
 // generate the faces of the tube surface 
 function loop_faces(segs, sides) =    
@@ -1743,9 +1733,9 @@ module sky(s=200) {
 function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.2);
           
 s= modulate(plane(trunc(plane(kis(trunc(I()))))));
-echo(poly_description(s));                    
+echo(p_description(s));                    
 t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[6]);              
-scale(20)  poly_render(t,false,false,true);
+scale(20)  p_render(t,false,false,true);
 */                        
 
 /*
@@ -1753,7 +1743,7 @@ scale(20)  poly_render(t,false,false,true);
 function fknot(t) = ftrefoil(t);
 s=fun_knot(step=10,r=0.4,sides=6);
 t=shell(s,thickness=0.2,outer_inset=0.5,inner_inset=0.3,fn=[]);              
-scale(20)  poly_render(t,false,false,true);
+scale(20)  p_render(t,false,false,true);
 */
 
 /*
@@ -1763,32 +1753,32 @@ function fknot(t) = ftorus(t);
 
 s=fun_knot(step=90,r=0.7,sides=4,phase=45);
 t=shell(s,thickness=0.5,outer_inset=0.5,inner_inset=0.35,fn=[]);              
-scale(20)  poly_render(t,false,false,true);
+scale(20)  p_render(t,false,false,true);
 
 */
 
 /*
 s=shell(plane(trunc(plane(kis(plane(trunc(D())), fn=[10])), fn=[10])));
 // s=trunc(plane(kis(T)),fn=[3]);
-poly_print(s);
-poly_render(s,false,false,true);
+p_print(s);
+p_render(s,false,false,true);
 */
 
 /*
 s=plane(propellor(dual(plane(trunc(C())))));
-poly_describe(s);
-scale(10) poly_render(shell(s),false,false,true);
+p_describe(s);
+scale(10) p_render(shell(s),false,false,true);
 
 */
 
 /*
 s=plane(whirl(plane(trunc(I()))));
-poly_print(s);
- scale(10) poly_render(shell(s),false,false,true);
+p_print(s);
+ scale(10) p_render(shell(s),false,false,true);
 */
 
 $fn=20;
-s=crop(plane(kis(plane(kis(I())))),0,100);
-scale(20) poly_render(s,true,true,false,re=0.04,rv=0.04);
-poly_print(s);
+s=crop(transform(plane(chamfer(plane(chamfer(D())))),m_translate([0,0,0.3])*m_scale([1,1.5,2])),0,100);
+scale(20) translate([0,0,-0.3]) p_render(s,true,true,false,re=0.08,rv=0.08);
+p_print(s);
 // ruler(10);
