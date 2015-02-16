@@ -17,7 +17,7 @@ Done :
     primitives T(),C(),O(),D(),I(),Y(n),P(n),A(n)
          variables replaced by functions to encapsulate constants and eliminate sequential problems with declarations
   
-    conway/hart operators 
+   conway/hart operators 
        kis(obj,ratio, nsides)
        ambo(obj)
        meta(obj,ratio)
@@ -50,6 +50,7 @@ Done :
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's
       
+       
     other 
        fun_knot to construct polyhedra from a function fknot()
        
@@ -1483,17 +1484,29 @@ function crop(obj,minz=-100,maxz=+100) =
                       [[i],v]
                   ])
     let(newids=vertex_ids(newv))
+    let(nv=vertex_values(newv))
     let(newf= [for (f = pf)
                let(nf = [for (v = f)
                          let(nv=vertex([v],newids))
-                         if (v != undef) nv
+                         if (nv != undef) nv
                          ])
                if (len(nf) == len(f)) // all points remain
                   nf 
                ])
+     let (newv2= [for (i=[0:len(nv)-1])
+                 if (len(vertex_faces(i,newf))>2) // vertex used
+                     [[i],nv[i]]
+                ])
+    let (newids2=vertex_ids(newv2))
+    let(newf2 = [for (f=newf)
+                   [for (v=f)
+                     vertex([v],newids2)
+                   ]
+                ])
     poly(name=str("X",poly_name(obj)),
-         vertices= vertex_values(newv),
-         faces=newf)
+         vertices= vertex_values(newv2),
+         faces=newf2,
+         debug=newids2)
 ; // endcrop
                
                   
@@ -1775,7 +1788,7 @@ poly_print(s);
 */
 
 $fn=20;
-s=crop(plane(dual(plane(tt(O())))),0,100);
+s=crop(plane(kis(plane(kis(I())))),0,100);
 scale(20) poly_render(s,true,true,false,re=0.04,rv=0.04);
 poly_print(s);
 // ruler(10);
