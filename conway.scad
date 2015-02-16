@@ -48,13 +48,14 @@ Done :
        orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's
+       crop(obj,minz,maxz) - then render with wire frame
        
     other 
        fun_knot to construct polyhedra from a function fknot()
        
 to do
        canon still fails if face is extreme - use plane first
-       last updated 15 Feb 2015 14.30
+       last updated 16 Feb 2015 08:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -453,11 +454,13 @@ module poly_print(obj) {
     if(debug!=[]) echo("Debug",debug);
 };
 
-function poly_scale(obj,scale) =
+function poly_resize(obj,size) =
    poly(name=str("scale",poly_name(obj)),
         vertices =
            [for (v = poly_vertices(obj))
-                hadamard(v,scale)
+                len(size)==3 
+                   ? hadamard(v / norm(v) ,size)
+                   : v * size /norm(v)
            ],
        faces = poly_faces(obj)
     );
@@ -719,7 +722,7 @@ function canon(obj,n=5) =
               vertices=poly_vertices(obj),
               faces=poly_faces(obj)
              );   
-
+             
 function dual(obj) =
     poly(name=str("d",poly_name(obj)),
          vertices = 
@@ -1362,10 +1365,10 @@ function tt(obj) =
        pe=poly_edges(obj))
   
   let (newv=  // edge mid points 
-         [for (edge=pe)
+       [for (edge=pe)
           let (ep = as_points(edge,pv))
              [edge, (ep[0]+ep[1])/2]
-         ])
+        ])
   let(newids=vertex_ids(newv,len(pv)))
   let(newf =
           flatten(
@@ -1459,9 +1462,8 @@ function orient(obj) =
          faces = lhs_faces(poly_faces(obj),poly_vertices(obj))
     );
  
- 
 function invert(obj,p) =
-// ensure faces have lhs order
+// invert vertices 
     poly(name=str(":",poly_name(obj)),
          vertices= 
             [ for (v =poly_vertices(obj))
@@ -1471,8 +1473,109 @@ function invert(obj,p) =
          faces = poly_faces(obj)
     );
  
+function crop(obj,minz=-100,maxz=+100) =
+// crop polyhedron to min max z height 
+    let (pv=poly_vertices(obj),
+         pf=poly_faces(obj))
+    let (newv =  [for (i=[0:len(pv)-1] )
+                  let(v = pv[i])
+                  if (v.z >= minz && v.z <= maxz)
+                      [[i],v]
+                  ])
+    let(newids=vertex_ids(newv))
+    let(newf= [for (f = pf)
+               let(nf = [for (v = f)
+                         let(nv=vertex([v],newids))
+                         if (v != undef) nv
+                         ])
+               if (len(nf) == len(f)) // all points remain
+                  nf 
+               ])
+    poly(name=str("X",poly_name(obj)),
+         vertices= vertex_values(newv),
+         faces=newf)
+; // endcrop
+               
+                  
 //modulation
 
+function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) = 
+   let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
+       pf=poly_faces(obj),           
+       pv=poly_vertices(obj))
+
+   let(inv=   // corresponding points on inner surface
+       [for (i =[0:len(pv)-1])
+        let(v = pv[i])
+        let(norms =
+            [for (f=vertex_faces(i,pf))
+             let (fp=as_points(f,pv))
+                normal(fp)
+            ])
+        let(av_norm = -vsum(norms)/len(norms))
+            v + thickness*av_norm
+        ])
+                 
+   let (newv =   
+ // the inset points on outer and inner surfaces
+ // outer inset points keyed by face, v, inner points by face,-v-1
+         flatten(
+           [ for (face = pf)
+             if(selected_face(face,fn))
+                 let(fp=as_points(face,pv),
+                     ofp=as_points(face,inv),
+                     c=centre(fp),
+                     oc=centre(ofp))
+                 flatten(
+                    [for (i=[0:len(face)-1])
+                     let(v=face[i],
+                         p = fp[i],
+                         op= ofp[i],
+                         ip = p + (c-p)*outer_inset,
+                         oip = op + (oc-op)*inner_inset)
+                     [ [[face,v],ip],[[face,-v-1],oip]]
+                    ])
+             ])          
+           )
+   let(newids=vertex_ids(newv,2*len(pv)))
+   let(newf =
+         flatten(
+          [ for (i = [0:len(pf)-1])   
+            let(face = pf[i])
+            flatten(
+              selected_face(face,fn)
+                ? [for (j=[0:len(face)-1])   //  replace N-face with 3*N quads 
+                  let (a=face[j],
+                       inseta = vertex([face,a],newids),
+                       oinseta= vertex([face,-a-1],newids),
+                       b=face[(j+1)%len(face)],
+                       insetb= vertex([face,b],newids),
+                       oinsetb=vertex([face,-b-1],newids),
+                       oa=len(pv) + a,
+                       ob=len(pv) + b) 
+                  
+                     [
+                       [a,b,insetb,inseta]  // outer face
+                      ,[inseta,insetb,oinsetb,oinseta]  //wall
+                      ,[oa,oinseta,oinsetb,ob]  // inner face
+                     ] 
+                   ] 
+                :  [[face],  //outer face
+                    [reverse([  //inner face
+                           for (j=[0:len(face)-1])
+                           len(pv) +face[j]
+                         ])
+                    ]
+                   ]    
+               )
+         ] ))    
+                           
+   poly(name=str("x",poly_name(obj)),
+       vertices=  concat(pv, inv, vertex_values(newv)) ,    
+       faces= newf,
+       debug=newids          
+       )
+; // end shell  
 function modulate_points(points) =
    [for(p=points)
        let(s=xyz_to_spherical(p),
@@ -1620,81 +1723,7 @@ module sky(s=200) {
    rotate([0,180,0]) ground(s);
 }
 
-function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) = 
-   let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
-       pf=poly_faces(obj),           
-       pv=poly_vertices(obj))
 
-   let(inv=   // corresponding points on inner surface
-       [for (i =[0:len(pv)-1])
-        let(v = pv[i])
-        let(norms =
-            [for (f=vertex_faces(i,pf))
-             let (fp=as_points(f,pv))
-                normal(fp)
-            ])
-        let(av_norm = -vsum(norms)/len(norms))
-            v + thickness*av_norm
-        ])
-                 
-   let (newv =   // the inset points on outer and inner surfaces
-         flatten(
-           [ for (face = pf)
-             if(selected_face(face,fn))
-                 let(fp=as_points(face,pv),
-                     ofp=as_points(face,inv),
-                     c=centre(fp),
-                     oc=centre(ofp))
-                 flatten(
-                    [for (i=[0:len(face)-1])
-                     let(v=face[i],
-                         p = fp[i],
-                         op= ofp[i],
-                         ip = p + (c-p)*outer_inset,
-                         oip = op + (oc-op)*inner_inset)
-                     [ [[face,v],ip],[[face,-v-1],oip]]
-                    ])
-             ])          
-           )
-   let(newids=vertex_ids(newv,2*len(pv)))
-   let(newf =
-         flatten(
-          [ for (i = [0:len(pf)-1])   
-            let(face = pf[i])
-            flatten(
-              selected_face(face,fn)
-                ? [for (j=[0:len(face)-1])   //  replace N-face with 3*N quads 
-                  let (a=face[j],
-                       inseta = vertex([face,a],newids),
-                       oinseta= vertex([face,-a-1],newids),
-                       b=face[(j+1)%len(face)],
-                       insetb= vertex([face,b],newids),
-                       oinsetb=vertex([face,-b-1],newids),
-                       oa=len(pv) + a,
-                       ob=len(pv) + b) 
-                  
-                     [
-                       [a,b,insetb,inseta]  // outer face
-                      ,[inseta,insetb,oinsetb,oinseta]  //wall
-                      ,[oa,oinseta,oinsetb,ob]  // inner face
-                     ] 
-                   ] 
-                :  [[face],  //outer face
-                    [reverse([  //inner face
-                           for (j=[0:len(face)-1])
-                           len(pv) +face[j]
-                         ])
-                    ]
-                   ]    
-               )
-         ] ))    
-                           
-   poly(name=str("x",poly_name(obj)),
-       vertices=  concat(pv, inv, vertex_values(newv)) ,    
-       faces= newf,
-       debug=newids          
-       )
-; // end shell  
 
 /*
 //  superegg_tktI  - Goldberg (3,3)  
@@ -1745,12 +1774,8 @@ poly_print(s);
  scale(10) poly_render(shell(s),false,false,true);
 */
 
-function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.4,1,2,1);         
-
- s=modulate(plane(dual(plane(tt(plane(tt(plane(tt(I())))))))));
- poly_describe(s);
- t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[]);
- scale(20) poly_render(t,false,false,true);
- 
-
+$fn=20;
+s=crop(plane(dual(plane(tt(O())))),0,100);
+scale(20) poly_render(s,true,true,false,re=0.04,rv=0.04);
+poly_print(s);
 // ruler(10);
