@@ -17,8 +17,7 @@ Done :
     primitives T(),C(),O(),D(),I(),Y(n),P(n),A(n)
          variables replaced by functions to encapsulate constants and eliminate sequential problems with declarations
   
-    operators 
-       transform(obj,matrix)    matrix transformation of vertices
+    conway/hart operators 
        kis(obj,ratio, nsides)
        ambo(obj)
        meta(obj,ratio)
@@ -28,19 +27,21 @@ Done :
        snub(obj,height)
        expand(obj,height)
        reflect(obj)
-       
        gyro(obj)   
        propellor(obj,ratio)
        join(obj)  == dual(ambo(obj)
        bevel(obj) == trunc(ambo(obj))
        chamfer(obj,ratio)
        whirl(obj,ratio)
-       
+   
+   additional operators
+       transform(obj,matrix)    matrix transformation of vertices
        insetkis(obj,ratio,height,fn)
        modulate(obj)  with global spherical function fmod()
        shell(obj,outer_inset,inner_inset,height)
        place(obj)  on largest face -use before shell
-       
+       crop(obj,minz,maxz) - then render with wire frame
+        
     canonicalization
        plane(obj,itr) -    planarization using reciprocals of centres
        canon(obj,itr) -     canonicalization using edge tangents
@@ -48,8 +49,7 @@ Done :
        orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's
-       crop(obj,minz,maxz) - then render with wire frame
-       
+      
     other 
        fun_knot to construct polyhedra from a function fknot()
        
