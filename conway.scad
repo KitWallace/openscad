@@ -12,7 +12,7 @@ The project is being documented in my blog
 
 Done :
     poly object constructor 
-    poly accessors and renderers  (as 3d object,description, full print, face and vertex analyses)
+    poly accessors and renderers  (as 3d object, description, full print, face and vertex analyses)
     
     primitives T(),C(),O(),D(),I(),Y(n),P(n),A(n)
          variables replaced by functions to encapsulate constants and eliminate sequential problems with declarations
@@ -127,12 +127,7 @@ function vsum(points,i=0) =
       i < len(points)
         ?  (points[i] + vsum(points,i+1))
         :  [0,0,0];
-
-function hadamard(a,b) =
-       len(a)==len(b)
-           ?  [for (i=[0:len(a)-1]) a[i]*b[i]] 
-           :  [];
-           
+          
 function norm2(v) = v.x*v.x+ v.y*v.y + v.z*v.z;
 
 function reciprocal(v) = v/norm2(v);
@@ -239,7 +234,14 @@ function ordered_face_edges(f) =
     [for (j=[0:len(f)-1])
         [f[j],f[(j+1)%len(f)]]
     ];
- 
+
+function all_edges(faces) =
+   [for (f = faces)
+       for (j=[0:len(f)-1])
+          let(p=f[j],q=f[(j+1)%len(f)])
+             [p,q] 
+   ];
+
 function distinct_face_edges(f) =
     [for (j=[0:len(f)-1])
        let(p=f[j],q=f[(j+1)%len(f)])
@@ -247,8 +249,7 @@ function distinct_face_edges(f) =
     ];
     
 function distinct_edges(faces) =
-   [for (i=[0:len(faces)-1])
-       let( f=faces[i])
+   [for (f = faces)
        for (j=[0:len(f)-1])
           let(p=f[j],q=f[(j+1)%len(f)])
              if(p<q) [p,q]  // no duplicates
@@ -286,7 +287,7 @@ function triangle(a,b) = norm(cross(a,b))/2;
 function face_area(face) =
      ssum([for (i=[0:len(face)-1])
            triangle(face[i], face[(i+1)%len(face)]) ]);
-
+     
 function face_areas(obj) =
    [for (f=p_faces(obj))
        let(face_points = as_points(f,p_vertices(obj)))
@@ -366,15 +367,19 @@ function lhs_faces(faces,vertices) =
   
 // poly functions
 //  constructor
-function poly(name,vertices,faces,debug=[]) = 
-    [name,vertices,faces,debug];
+function poly(name,vertices,faces,debug=[],partial=false) = 
+    [name,vertices,faces,debug,partial];
     
 // accessors
 function p_name(obj) = obj[0];
 function p_vertices(obj) = obj[1];
 function p_faces(obj) = obj[2];
 function p_debug(obj)=obj[3];
-function p_edges(obj) = distinct_edges(p_faces(obj));
+function p_partial(obj)=obj[4];
+function p_edges(obj) = 
+       p_partial(obj)
+           ? all_edges(p_faces(obj))
+           : distinct_edges(p_faces(obj));
 function p_description(obj) =
     str(p_name(obj),
          ", ",str(len(p_vertices(obj)), " Vertices " ),
@@ -732,10 +737,13 @@ function dual(obj) =
 
 function vertex_ids(entries,offset=0,i=0) = 
 // to get position of new vertices 
-    [for (i=[0:len(entries)-1]) 
-          [entries[i][0],i+offset]
-    ];
-          
+    len(entries) > 0
+          ?[for (i=[0:len(entries)-1]) 
+             [entries[i][0],i+offset]
+           ]
+          :[]
+          ;
+   
 function vertex_values(entries)= 
     [for (e = entries) e[1]];
  
@@ -1464,41 +1472,7 @@ function invert(obj,p) =
          faces = p_faces(obj)
     );
  
-function crop(obj,minz=-100,maxz=+100) =
-// crop polyhedron to min max z height 
-    let (pv=p_vertices(obj),
-         pf=p_faces(obj))
-    let (newv =  [for (i=[0:len(pv)-1] )
-                  let(v = pv[i])
-                  if (v.z >= minz && v.z <= maxz)
-                      [[i],v]
-                  ])
-    let(newids=vertex_ids(newv))
-    let(nv=vertex_values(newv))
-    let(newf= [for (f = pf)
-               let(nf = [for (v = f)
-                         let(nv=vertex([v],newids))
-                         if (nv != undef) nv
-                         ])
-               if (len(nf) == len(f)) // all points remain
-                  nf 
-               ])
-     let (newv2= [for (i=[0:len(nv)-1])
-                 if (len(vertex_faces(i,newf))>2) // vertex used
-                     [[i],nv[i]]
-                ])
-    let (newids2=vertex_ids(newv2))
-    let(newf2 = [for (f=newf)
-                   [for (v=f)
-                     vertex([v],newids2)
-                   ]
-                ])
-    poly(name=str("X",p_name(obj)),
-         vertices= vertex_values(newv2),
-         faces=newf2,
-         debug=newids2)
-; // endcrop
-               
+
                   
 //modulation
 
@@ -1579,6 +1553,9 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) =
        debug=newids          
        )
 ; // end shell  
+                           
+
+           
 function modulate_points(points) =
    [for(p=points)
        let(s=xyz_to_spherical(p),
@@ -1612,7 +1589,14 @@ function fbauble(r,theta,phi) =
 
 function fellipsoid(r,theta,phi,e) = [r*(1.0+pow(e*cos(theta),2)),theta,phi] ;
   
-function fsuperegg(r,theta,phi,nt,et=1,np,ep=1) =
+function fsuperegg(r,theta,phi,n,e=1) =
+       [ r* (pow(
+               pow(abs(cos(theta)),n) 
+           + e*pow(abs(sin(theta)),n)
+            ,-1/n))
+         ,theta,phi];
+         
+function fsupersuperegg(r,theta,phi,nt,et=1,np=2,ep=1) =
        [ r* (pow(
                pow(abs(cos(theta)),nt) 
            + et*pow(abs(sin(theta)),nt)
@@ -1652,13 +1636,15 @@ function tube_points(loop, circle_points) =
           m_transform(p,m)
     ];
 // generate the faces of the tube surface 
+function kv(i,j,maxi,maxj)= (i % maxi) * maxj + j % maxj;
+
 function loop_faces(segs, sides) =    
-      [for (i=[0:segs-1]) 
+      [for (i=[0:segs -1]) 
        for (j=[0:sides -1])  
-       let (a=i * sides + j, 
-            b=i * sides + (j + 1) % sides, 
-            c=((i + 1) % segs) * sides + (j + 1) % sides, 
-            d=((i + 1) % segs) * sides + j)
+       let (a=kv(i,j,segs,sides), 
+            b=kv(i,j+1,segs,sides), 
+            c=kv(i+1,j+1,segs,sides),
+            d=kv(i+1,j,segs,sides))
        [a,b,c,d]    
      ];
 
@@ -1667,7 +1653,7 @@ function fun_knot(name="not set",step=10,r=0.2,sides=6,phase=0) =
     let(circle_points = circle_points(r,sides,phase),
         loop_points = loop_points(step),
         tube_points = tube_points(loop_points,circle_points),
-       loop_faces = loop_faces(len(loop_points),sides))
+        loop_faces = loop_faces(len(loop_points),sides))
     poly(name=name, vertices = tube_points, faces = loop_faces)
 ; 
 
@@ -1718,15 +1704,13 @@ module ruler(n) {
        translate([(i-n/2 +0.5)* 10,0,0]) cube([9.8,5,2], center=true);
 }
 
-module ground(s=200) {
-   translate([0,0,-s/2]) cube(s,center=true);
+module ground(z=200) {
+   translate([0,0,-z]) cube(z*2,center=true);
 } 
 
-module sky(s=200) {
-   rotate([0,180,0]) ground(s);
+module sky(z=200) {
+   rotate([0,180,0]) ground(z);
 }
-
-
 
 /*
 //  superegg_tktI  - Goldberg (3,3)  
@@ -1736,32 +1720,30 @@ s= modulate(plane(trunc(plane(kis(trunc(I()))))));
 echo(p_description(s));                    
 t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[6]);              
 scale(20)  p_render(t,false,false,true);
-*/                        
+*/
+
 
 /*
 // trefoil knot
-function fknot(t) = ftrefoil(t);
-s=fun_knot(step=10,r=0.4,sides=6);
-t=shell(s,thickness=0.2,outer_inset=0.5,inner_inset=0.3,fn=[]);              
-scale(20)  p_render(t,false,false,true);
-*/
+function fknot(t) = ftorus(t);
+s=fun_knot(step=20,r=0.48,sides=9);
+t=shell(s,thickness=0.4,outer_inset=0.5,inner_inset=0.3,fn=[]);              
+ scale(20)  p_render(t,false,false,true);
 
+*/
 /*
 // torus knot
-
 function fknot(t) = ftorus(t);
-
 s=fun_knot(step=90,r=0.7,sides=4,phase=45);
 t=shell(s,thickness=0.5,outer_inset=0.5,inner_inset=0.35,fn=[]);              
 scale(20)  p_render(t,false,false,true);
-
 */
 
 /*
 s=shell(plane(trunc(plane(kis(plane(trunc(D())), fn=[10])), fn=[10])));
 // s=trunc(plane(kis(T)),fn=[3]);
-p_print(s);
-p_render(s,false,false,true);
+p_describe(s);
+scale(10) p_render(s,false,false,true);
 */
 
 /*
@@ -1774,11 +1756,27 @@ scale(10) p_render(shell(s),false,false,true);
 /*
 s=plane(whirl(plane(trunc(I()))));
 p_print(s);
- scale(10) p_render(shell(s),false,false,true);
-*/
-
+scale(10) p_render(shell(s,fn=[6]),false,false,true);
 $fn=20;
-s=crop(transform(plane(chamfer(plane(chamfer(D())))),m_translate([0,0,0.3])*m_scale([1,1.5,2])),0,100);
-scale(20) translate([0,0,-0.3]) p_render(s,true,true,false,re=0.08,rv=0.08);
+
+#*/
+
+s=transform(plane(chamfer(plane(chamfer(D())))),m_translate([0,0,0.3])*m_scale([1,1.5,2]));
+t=shell(s,fn=[0]);
+p_print(t);
+
+scale(20) difference() {
+    translate([0,0,-0.5]) p_render(t,false,false,true,re=0.08,rv=0.08);
+    ground();
+}
+
+/*
+s=crop(I(),minz=0);
 p_print(s);
+//p_render(s,true,true,true,re=0.08,rv=0.08);
+t=semishell(s);
+p_print(t);
+
+p_render(t,false,false,true,re=0.08,rv=0.08);
+*/
 // ruler(10);
