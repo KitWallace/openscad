@@ -38,7 +38,7 @@ Done :
        transform(obj,matrix)    matrix transformation of vertices
        insetkis(obj,ratio,height,fn)
        modulate(obj)  with global spherical function fmod()
-       shell(obj,outer_inset,inner_inset,height)
+       shell(obj,outer_inset,inner_inset,height,min_edge_length)
        place(obj)  on largest face -use before shell
        crop(obj,minz,maxz) - then render with wire frame
         
@@ -56,7 +56,7 @@ Done :
        
 to do
        canon still fails if face is extreme - use plane first
-       last updated 16 Feb 2015 08:00
+       last updated 21 Feb 2015 20:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -333,7 +333,12 @@ function face_coplanarity(face) =
        norm(cross(cross(face[1]-face[0],face[2]-face[1]),
                   cross(face[2]-face[1],face[3]-face[2])
             ));
-    
+
+function min_edge_length(face,points) =
+    let (edges=ordered_face_edges(face))
+    let (lengths=edge_lengths(edges,points))
+    min(lengths);
+   
 function face_irregularity(face,points) =
     let (edges=ordered_face_edges(face))
     let (lengths=edge_lengths(edges,points))
@@ -886,7 +891,7 @@ function pyra(obj,height=0.1) =
      let(newf=flatten(
          [ for (face=pf) 
            let(centre=vertex(face,newids))  
-           flatten( [for (j=[0:len(f)-1]) 
+           flatten( [for (j=[0:len(face)-1]) 
              let(a=face[j],
                  b=face[(j+1)%len(face)], 
                  z=face[(j-1+len(face))%len(face)],        
@@ -1238,6 +1243,13 @@ function expand(obj,height=0.5) =
          
 ; // end expand
 
+function rexpand(s,height,n=0) =
+// used to round edges 
+    n == 0
+         ? s
+         : rexpand(expand(s,height),height*2,n-1)
+;
+                   
 function whirl(obj, ratio=0.3333, height=0.2) = 
 // retain original vertices, add directed edge points  and rotated inset points
 //  each edge  becomes 2 hexagons
@@ -1476,7 +1488,7 @@ function invert(obj,p) =
                   
 //modulation
 
-function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) = 
+function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_length=0.01) = 
    let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
        pf=p_faces(obj),           
        pv=p_vertices(obj))
@@ -1498,7 +1510,8 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) =
  // outer inset points keyed by face, v, inner points by face,-v-1
          flatten(
            [ for (face = pf)
-             if(selected_face(face,fn))
+             if(selected_face(face,fn)
+                && min_edge_length(face,pv) > min_edge_length)
                  let(fp=as_points(face,pv),
                      ofp=as_points(face,inv),
                      c=centre(fp),
@@ -1521,6 +1534,7 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[]) =
             let(face = pf[i])
             flatten(
               selected_face(face,fn)
+                && min_edge_length(face,pv) > min_edge_length
                 ? [for (j=[0:len(face)-1])   //  replace N-face with 3*N quads 
                   let (a=face[j],
                        inseta = vertex([face,a],newids),
@@ -1714,14 +1728,13 @@ module sky(z=200) {
 
 /*
 //  superegg_tktI  - Goldberg (3,3)  
-function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.2);
-          
+function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.3333);
 s= modulate(plane(trunc(plane(kis(trunc(I()))))));
 echo(p_description(s));                    
 t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[6]);              
 scale(20)  p_render(t,false,false,true);
-*/
 
+*/
 
 /*
 // trefoil knot
@@ -1760,23 +1773,20 @@ scale(10) p_render(shell(s,fn=[6]),false,false,true);
 $fn=20;
 
 #*/
-
+/*
 s=transform(plane(chamfer(plane(chamfer(D())))),m_translate([0,0,0.3])*m_scale([1,1.5,2]));
 t=shell(s,fn=[0]);
 p_print(t);
-
 scale(20) difference() {
     translate([0,0,-0.5]) p_render(t,false,false,true,re=0.08,rv=0.08);
     ground();
 }
-
-/*
-s=crop(I(),minz=0);
-p_print(s);
-//p_render(s,true,true,true,re=0.08,rv=0.08);
-t=semishell(s);
-p_print(t);
-
-p_render(t,false,false,true,re=0.08,rv=0.08);
 */
+
 // ruler(10);
+/*
+s=plane(expand(trunc(D())));
+t=shell(s,outer_inset=0.2,inner_inset=0.1,thickness=0.1,min_edge_length=0.27);
+
+scale(20) p_render(t,false,false,true);
+*/
