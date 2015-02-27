@@ -8,9 +8,10 @@
   The project is documented in my blog 
    http://kitwallace.tumblr.com/tagged/turtle
   
-   using open knot code to render in 3D - much faster  but no rounded corners
+   using open knot code to render in 3D - vey fast
    
-   uses concat, list comprehension, let 
+   could vary radius to maintain a constant cross-section 
+
 */
 
 function m_translate(v) = [ [1, 0, 0, 0],
@@ -42,6 +43,7 @@ function m_to(centre,normal) =
 
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
 
+function angle(a,b) =  acos(a*b/(norm(a)*norm(b)));
 function ssum(list,i=0) =  
       i < len(list)
         ?  (list[i] + ssum(list,i+1))
@@ -57,7 +59,25 @@ function scale_3(list,scale) =
         len(scale) == 3 
           ? scale : [scale,scale,scale])
    [for (p=list) hadamard(p,mscale)] ;
-       
+
+// interpolate between points in a closed path
+
+function interpolate(points,n,i,weight=[-1, 9, 9, -1] / 16) =
+        points[(i + n - 1) %n] * weight[0] +
+        points[i]              * weight[1] +
+        points[(i + 1) %n]     * weight[2] +
+        points[(i + 2) %n]     * weight[3] ;
+
+function subdivide(points,i=0) = 
+   flatten(
+      [for (i=[0:len(points)-1])
+         [points[i], interpolate(points,len(points),i)]
+    ]);
+
+function smooth(points,n) =
+   n == 0
+      ?  points
+      :  smooth(subdivide(points), n-1);       
 // generate points for the profile as an ellipse
 // with radius r, eccentricity e 
            
@@ -92,6 +112,7 @@ function tube_points(loop_points,profile_points,closed) =
        let (n0=loop_points[i]-loop_points[i-1])
        let (m = m_to(loop_points[i], (n0+n1)))
        for (p = profile_points) 
+          
           transform(p,m)
       ] ,
        let (last=len(loop_points) - 1)
@@ -134,11 +155,15 @@ function loop_faces(segs, sides, closed) =
    
 // create a knot from a sequnce of path points 
 // and cross_section profile points as a polyhedron
-module path_knot(loop_points,profile_points)  {
-    closed = loop_points[0] == loop_points[len(loop_points)-1]; 
+module path_knot(loop_points,profile_points,length,closed)  {
+    closed = 
+       closed==undef
+         ?  loop_points[0] == loop_points[len(loop_points)-1] 
+         : closed;
+    loop_length = length == undef ? len(loop_points) :length;
     tube_points = tube_points(loop_points,profile_points,closed);
-    loop_faces = loop_faces(len(loop_points),len(profile_points),closed);
-    polyhedron(points = tube_points, faces = loop_faces);
+    loop_faces = loop_faces(loop_length,len(profile_points),closed);
+    polyhedron(points = tube_points, faces = loop_faces,convexity=20);
 }; 
 
 function turtle_path(steps,pos=[0,0,0],dir=0,i=0) =
@@ -155,72 +180,46 @@ function turtle_path(steps,pos=[0,0,0],dir=0,i=0) =
                ? let (angle = step[1])
                  turtle_path(steps,pos,dir-angle,i+1)
                : turtle_path(steps,pos,dir,i+1)
-      : [pos]
-;
-         
-module turtle (steps, i=0, corner=true) {
-  if ( i < len(steps)) {
-   step = steps[i];
-   command=step[0];
-      
-   if(command=="F") {
-       distance = step[1];
-       width=step[2];
-       translate([distance/2,0]) 
-            square([distance,width],center=true);
-       translate([distance,0]) 
-         turtle(steps,i+1);
-      }
-   else if (command=="L") {
-      angle=step[1];
-      width=step[2];
-      if (corner) circle(width/2);
-      rotate([0,0,angle])
-         turtle(steps,i+1);
-      }
-   else if (command=="R") {
-      angle=step[1];
-      width=step[2];
-      if (corner) circle(width/2);
-      rotate([0,0,-angle])
-         turtle(steps,i+1);
-      }
-   else
-      echo("unknown command" ,step);
-  }
-};
-
+      : [pos];
+ 
 //  basic poly 
-function poly(side,angle,steps,width=1) =
+function poly(side,angle,steps) =
    flatten(
     [for (i=[0:steps-1])
-     [ ["F",side,width],["R",angle,width]]
+     [ ["F",side],["R",angle]]
     ]);
 
-function poly2(side,angle,steps,width=1) =
+function poly2(side,angle,steps) =
    flatten(
     [for (i=[0:steps-1])
-     [ ["F",side,width],["R",angle,width],["F",side,width],["R",2*angle,width] ]
+     [ ["F",side],["R",angle],["F",side],["R",2*angle] ]
     ]);
 
-function spi(side,side_inc,angle,width=1,steps) =
+function spi(side,side_inc,angle,steps) =
    steps == 0
       ? []
-      : concat( [["F",side,width]],
-                [["L",angle,width]] ,
-                spi(side+side_inc,side_inc,angle,width,steps-1) 
+      : concat( [["F",side]],
+                [["L",angle]] ,
+                spi(side+side_inc,side_inc,angle,steps-1) 
               )
     ; 
 
-function inspi(side,angle,angle_inc,width=1,steps) =
+function inspi(side,angle,angle_inc,steps) =
    steps == 0
       ? []
-      : concat( [["F",side,width]],
-                [["L",angle,width]] ,
-                inspi(side,angle+angle_inc,angle_inc,width,steps-1) 
+      : concat( [["F",side]],
+                [["L",angle]] ,
+                inspi(side,angle+angle_inc,angle_inc,steps-1) 
               )
     ; 
-
+function inspi2(side,angle,angle_inc,angle_inc_inc=0,steps) =
+   steps == 0
+      ? []
+      : concat( [["F",side]],
+                [["L",angle]] ,
+                inspi2(side,angle+angle_inc,angle_inc+angle_inc_inc, angle_inc_inc,steps-1) 
+              )
+    ; 
 $fn=30;
     
 // steps = poly(20,90,4);    //square    
@@ -231,21 +230,24 @@ $fn=30;
 // steps= poly2(5,144,5);
     
 // steps= poly2(3,125,40,0.5);
-    
+// steps = spi(2,2,60,3,51);     
 // steps =  inspi(5,0,7,width=1,steps=200); 
+// steps = inspi(20,3,3,width=1,steps=180);  //clef
+
 // echo(steps);
 
 // translate([100,100,0]) 
 // linear_extrude(height=10) 
 
- 
 // sample turtle graphics
-
-steps = spi(2,2,60,3,50); 
+steps = inspi2(10,0,8,0,steps=150);;
 echo(steps);
 path=turtle_path(steps);
-perimeter = ellipse_points(r=5,e=10,sides=4,theta=45);
+echo(path);
+spath=smooth(path,0);
+echo(spath);
+perimeter = ellipse_points(r=4,e=1.5,sides=4,theta=45);
 echo(perimeter);
-echo(path_length(path));
-path_knot(path,perimeter);
+echo(path_length(path),path_length(spath));
+path_knot(path,perimeter,len(path));
 
