@@ -43,7 +43,6 @@ function m_to(centre,normal) =
 
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
 
-function angle(a,b) =  acos(a*b/(norm(a)*norm(b)));
 function ssum(list,i=0) =  
       i < len(list)
         ?  (list[i] + ssum(list,i+1))
@@ -60,30 +59,16 @@ function scale_3(list,scale) =
           ? scale : [scale,scale,scale])
    [for (p=list) hadamard(p,mscale)] ;
 
-// interpolate between points in a closed path
-
-function interpolate(points,n,i,weight=[-1, 9, 9, -1] / 16) =
-        points[(i + n - 1) %n] * weight[0] +
-        points[i]              * weight[1] +
-        points[(i + 1) %n]     * weight[2] +
-        points[(i + 2) %n]     * weight[3] ;
-
-function subdivide(points,i=0) = 
-   flatten(
-      [for (i=[0:len(points)-1])
-         [points[i], interpolate(points,len(points),i)]
-    ]);
-
-function smooth(points,n) =
-   n == 0
-      ?  points
-      :  smooth(subdivide(points), n-1);       
 // generate points for the profile as an ellipse
 // with radius r, eccentricity e 
            
 function ellipse_points(r, sides, e=1, theta=0) = 
    [for (i=[0:sides-1]) [r * e * sin(i*360/sides + theta), r *  cos(i*360/sides +theta), 0]];
 
+function rectangle_points(width,height) =
+    [ [-width/2,0,0], [width/2,0,0],
+      [width/2,height,0], [-width/2,height,0]
+    ];
 // generate the points along the centre of the tube
 function function_points(step,min=0,max=360) = 
    [for (t=[min:step:max]) f(t)];
@@ -155,11 +140,8 @@ function loop_faces(segs, sides, closed) =
    
 // create a knot from a sequnce of path points 
 // and cross_section profile points as a polyhedron
-module path_knot(loop_points,profile_points,length,closed)  {
-    closed = 
-       closed==undef
-         ?  loop_points[0] == loop_points[len(loop_points)-1] 
-         : closed;
+module path_knot(loop_points,profile_points,length)  {
+    closed =  norm(loop_points[0]- loop_points[len(loop_points)-1])  <0.000000000001 ;
     loop_length = length == undef ? len(loop_points) :length;
     tube_points = tube_points(loop_points,profile_points,closed);
     loop_faces = loop_faces(loop_length,len(profile_points),closed);
@@ -201,8 +183,7 @@ function spi(side,side_inc,angle,steps) =
       : concat( [["F",side]],
                 [["L",angle]] ,
                 spi(side+side_inc,side_inc,angle,steps-1) 
-              )
-    ; 
+              ) ; 
 
 function inspi(side,angle,angle_inc,steps) =
    steps == 0
@@ -224,14 +205,14 @@ $fn=30;
     
 // steps = poly(20,90,4);    //square    
 // steps = poly(10,45,8,4);    // an octagon  
-// steps =  poly(40,144,5,2);  // a pentagram
+// steps = poly(40,144,5,2);  // a pentagram
 // steps = poly(30,135,8);
 // steps = poly(20,108,11);
-// steps= poly2(5,144,5);
+// steps = poly2(5,144,5);
     
-// steps= poly2(3,125,40,0.5);
+// steps = poly2(3,125,40,0.5);
 // steps = spi(2,2,60,3,51);     
-// steps =  inspi(5,0,7,width=1,steps=200); 
+// steps = inspi(5,0,7,width=1,steps=200); 
 // steps = inspi(20,3,3,width=1,steps=180);  //clef
 
 // echo(steps);
@@ -240,14 +221,12 @@ $fn=30;
 // linear_extrude(height=10) 
 
 // sample turtle graphics
-steps = inspi2(10,0,8,0,steps=150);;
+
+steps = poly(40,144,5);
 echo(steps);
 path=turtle_path(steps);
 echo(path);
-spath=smooth(path,0);
-echo(spath);
-perimeter = ellipse_points(r=4,e=1.5,sides=4,theta=45);
+perimeter = rectangle_points(width=10,height=8);
 echo(perimeter);
-echo(path_length(path),path_length(spath));
-path_knot(path,perimeter,len(path));
-
+echo(path_length(path));
+path_knot(path,perimeter);
