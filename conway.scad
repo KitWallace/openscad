@@ -100,19 +100,19 @@ function m_transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
 
 function m_to(centre,normal) = 
       m_rotate([0, atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]) 
-    * m_rotate([0, 0, atan2(normal[1], normal[0])]) 
+    * m_rotate([0, 0, atan2(normal.y, normal.x)]) 
     * m_translate(centre);   
    
 function m_from(centre,normal) = 
       m_translate(-centre)
-    * m_rotate([0, 0, -atan2(normal[1], normal[0])]) 
-    * m_rotate([0, -atan2(sqrt(pow(normal[0], 2) + pow(normal[1], 2)), normal[2]), 0]); 
+    * m_rotate([0, 0, -atan2(normal.y, normal.x)]) 
+    * m_rotate([0, -atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]); 
 
 // modules to orient objects
 module orient_to(centre, normal) {   
       translate(centre)
-      rotate([0, 0, atan2(normal[1], normal[0])]) //rotation
-      rotate([0, atan2(sqrt(pow(normal[0], 2)+pow(normal[1], 2)),normal[2]), 0])
+      rotate([0, 0, atan2(normal.y, normal.x)]) //rotation
+      rotate([0, atan2(sqrt(pow(normal.x, 2)+pow(normal.y, 2)),normal.z), 0])
       children();
 }
 
@@ -1353,21 +1353,39 @@ function random(obj,offset=0.1) =
 
 function qt(obj) =
 // triangulate quadrilateral faces
+// use shortest diagonal so triangles are most nearly equilateral
   let (pf=p_faces(obj),
-       pv=p_vertices(obj),
-       pe=p_edges(obj))
+       pv=p_vertices(obj))
+           
+  poly(name=str("u",poly_name(obj)),
+       vertices=pv,          
+       faces= flatten(
+           [for (f = pf)
+            len(f) == 4
+              ?  norm(f[0]-f[2]) < norm(f[1]-f[3])
+                   ? [ [f[0],f[1],f[2]], [f[0],f[2],f[3]] ]  
+                   : [ [f[1],f[2],f[3]], [f[1],f[3],f[0]] ]         
+              :  [f]
+           ])
+       )
+;// end qt
+        
+function pt(obj) =
+// triangulate pentagonal faces
+  let (pf=p_faces(obj),
+       pv=p_vertices(obj))
            
   poly(name=str("u",p_name(obj)),
        vertices=pv,          
        faces= flatten(
            [for (f = pf)
-            len(f) == 4
-              ? [ [f[1],f[2],f[3]], [f[1],f[3],f[0]]]          
-              :  f 
+            len(f) == 5
+              ?  [[f[0],f[1],f[4]], [f[1],f[2],f[4]], [f[4],f[2],f[3]]]
+              :  [f]
            ])
        )
-;// end qt
-           
+;// end pt
+                 
 function tt(obj) =
 // replace triangular faces with 4 triangles  
 // requires  all faces to be triangular
@@ -1783,10 +1801,8 @@ scale(20) difference() {
 }
 */
 
-// ruler(10);
-/*
-s=plane(expand(trunc(D())));
-t=shell(s,outer_inset=0.2,inner_inset=0.1,thickness=0.1,min_edge_length=0.27);
+* ruler(10);
 
-scale(20) p_render(t,false,false,true);
-*/
+s=place(plane(trunc(C())));
+scale (30) p_render(shell(s,outer_inset=0.25,inner_inset=0,thickness=0.2),false,false,true);
+    
