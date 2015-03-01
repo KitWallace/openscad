@@ -56,7 +56,7 @@ Done :
        
 to do
        canon still fails if face is extreme - use plane first
-       last updated 21 Feb 2015 20:00
+       last updated 1 March 2015 20:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -1357,7 +1357,7 @@ function qt(obj) =
   let (pf=p_faces(obj),
        pv=p_vertices(obj))
            
-  poly(name=str("u",poly_name(obj)),
+  poly(name=str("u",p_name(obj)),
        vertices=pv,          
        faces= flatten(
            [for (f = pf)
@@ -1370,22 +1370,6 @@ function qt(obj) =
        )
 ;// end qt
         
-function pt(obj) =
-// triangulate pentagonal faces
-  let (pf=p_faces(obj),
-       pv=p_vertices(obj))
-           
-  poly(name=str("u",p_name(obj)),
-       vertices=pv,          
-       faces= flatten(
-           [for (f = pf)
-            len(f) == 5
-              ?  [[f[0],f[1],f[4]], [f[1],f[2],f[4]], [f[4],f[2],f[3]]]
-              :  [f]
-           ])
-       )
-;// end pt
-                 
 function tt(obj) =
 // replace triangular faces with 4 triangles  
 // requires  all faces to be triangular
