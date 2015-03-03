@@ -43,14 +43,12 @@ Done :
        crop(obj,minz,maxz) - then render with wire frame
         
     canonicalization
-       plane(obj,itr) -    planarization using reciprocals of centres
-       canon(obj,itr) -     canonicalization using edge tangents
+       plane(obj,itr) - planarization using reciprocals of centres
+       canon(obj,itr) - canonicalization using edge tangents
        normalize()   - centre and scale
        orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
-             and occasionally for David's
-      
-       
+             and occasionally for David's 
     other 
        fun_knot to construct polyhedra from a function fknot()
        
@@ -108,7 +106,7 @@ function m_from(centre,normal) =
     * m_rotate([0, 0, -atan2(normal.y, normal.x)]) 
     * m_rotate([0, -atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]); 
 
-// modules to orient objects
+// modules to orient objects for rendering
 module orient_to(centre, normal) {   
       translate(centre)
       rotate([0, 0, atan2(normal.y, normal.x)]) //rotation
@@ -136,20 +134,6 @@ function ssum(list,i=0) =
       i < len(list)
         ?  (list[i] + ssum(list,i+1))
         :  0;
-   
-function max(v, max=-9999999999999999,i=0) =
-    i < len(v) 
-        ?  v[i] > max 
-            ?  max(v, v[i], i+1 )
-            :  max(v, max, i+1 ) 
-        : max;
-
-function min(v, min=9999999999999999,i=0) =
-    i < len(v) 
-        ?  v[i] < min 
-            ?  min(v, v[i], i+1 )
-            :  min(v, min, i+1 ) 
-        : min;
 
 function vcontains(val,list) =
      search([val],list)[0] != [];
@@ -219,7 +203,8 @@ function ordered_vertex_edges(v,vfaces,face,k=0)  =
 function face_with_edge(edge,faces) =
      flatten(
         [for (f = faces) 
-           if (vcontains(edge,ordered_face_edges(f))) f
+           if (vcontains(edge,ordered_face_edges(f)))
+            f
         ]);
                    
 // edge functions
@@ -315,7 +300,7 @@ function average_normal(fp) =
            [for(i=[0:fl-1])
             let(n=orthogonal(fp[i],fp[(i+1)%fl],fp[(i+2)%fl]))
             let(normn=norm(n))
-              normn==0? [] : n/normn
+              normn==0 ? [] : n/normn
            ]
           )
      vsum(unitns)/len(unitns);
@@ -737,7 +722,7 @@ function dual(obj) =
 ;  // end dual
               
 // Conway operators 
-/*  where necessary, new vertices are first created and stored in an associative array, keyed by whatever is appropriate to identify the new vertex - this could be an old vertex id, a face, an edgeor something more complicated.  This array is then used to create an associative array of key and vertex ids for use in face construction, and to generate the new vertices themselves
+/*  where necessary, new vertices are first created and stored in an associative array, keyed by whatever is appropriate to identify the new vertex - this could be an old vertex id, a face, an edge or something more complicated.  This array is then used to create an associative array of key and vertex ids for use in face construction, and to generate the new vertices themselves. 
 */
 
 function vertex_ids(entries,offset=0,i=0) = 
@@ -1370,6 +1355,22 @@ function qt(obj) =
        )
 ;// end qt
         
+function pt(obj) =
+// triangulate pentagonal faces
+  let (pf=p_faces(obj),
+       pv=p_vertices(obj))
+           
+  poly(name=str("u",p_name(obj)),
+       vertices=pv,          
+       faces= flatten(
+           [for (f = pf)
+            len(f) == 5
+              ?  [[f[0],f[1],f[4]], [f[1],f[2],f[4]], [f[4],f[2],f[3]]]
+              :  [f]
+           ])
+       )
+;// end pt
+                 
 function tt(obj) =
 // replace triangular faces with 4 triangles  
 // requires  all faces to be triangular
@@ -1490,7 +1491,7 @@ function invert(obj,p) =
                   
 //modulation
 
-function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_length=0.01) = 
+function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_length=0.01,ir=1) = 
    let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
        pf=p_faces(obj),           
        pv=p_vertices(obj))
@@ -1522,7 +1523,7 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_leng
                     [for (i=[0:len(face)-1])
                      let(v=face[i],
                          p = fp[i],
-                         op= ofp[i],
+                         op= ofp[i]*ir,
                          ip = p + (c-p)*outer_inset,
                          oip = op + (oc-op)*inner_inset)
                      [ [[face,v],ip],[[face,-v-1],oip]]
@@ -1785,8 +1786,7 @@ scale(20) difference() {
 }
 */
 
-* ruler(10);
-
-s=place(plane(trunc(C())));
-scale (30) p_render(shell(s,outer_inset=0.25,inner_inset=0,thickness=0.2),false,false,true);
+s=place(plane(dual(trunc(O())),20));
+scale (30) p_render(shell(s,outer_inset=0.35,inner_inset=0.0,thickness=0.15),false,false,true);
     
+echo(p_irregular_faces(s));
