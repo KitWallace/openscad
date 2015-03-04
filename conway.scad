@@ -45,7 +45,7 @@ Done :
     canonicalization
        plane(obj,itr) - planarization using reciprocals of centres
        canon(obj,itr) - canonicalization using edge tangents
-       normalize()   - centre and scale
+       p_resize_points()   - resize to a given average radius
        orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's 
@@ -53,7 +53,7 @@ Done :
        
 to do
        canon still fails if face is extreme - use plane first
-       last updated 4 March 2015 11:00
+       last updated 4 March 2015 18:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -582,7 +582,7 @@ function I() =
 function Y(n,h=1) =
    poly(name= str("Y",n) ,
       vertices=
-      normalize(concat(
+      resize_points(concat(
         [for (i=[0:n-1])
             [cos(i*360/n),sin(i*360/n),0]
         ],
@@ -642,26 +642,15 @@ function A(n,h=1) =
 function centre_points(points) = 
      vadd(points, - centre(points));
 
-function sphericalize(points,radius=1) =
-   [for (p = points)
-       p* radius/ norm(p)
-   ];
-
-function p_sphericalize(obj,radius=1) =
-    poly(name=str("n",p_name(obj)),
-         vertices=sphericalize(p_vertices(obj),radius),
-         faces=p_faces(obj)
-   );
-   
-//scale to average radius = radius
-function normalize(points,radius=1) =
+//resize so average radius = radius
+function resize_points(points,radius=1) =
     let(ps=centre_points(points),
         an=average_norm(ps))
     ps * radius /an;
 
-function p_normalize(obj,radius=1) =
+function p_resize(obj,radius=1) =
     poly(name=str("n",p_name(obj)),
-         vertices=normalize(p_vertices(obj),radius),
+         vertices=resize_points(p_vertices(obj),radius),
          faces=p_faces(obj)
    );
       
@@ -681,7 +670,7 @@ function plane(obj,n=5) =
     n > 0 
        ? plane(rdual(rdual(obj)),n-1)   
        : poly(name=str("P",p_name(obj)),
-              vertices=sphericalize(p_vertices(obj)),
+              vertices=resize_points(p_vertices(obj)),
               faces=p_faces(obj)
              );
 
@@ -705,7 +694,7 @@ function canon(obj,n=5) =
     n > 0 
        ? canon(ndual(ndual(obj)),n-1)   
        : poly(name=str("K",p_name(obj)),
-              vertices=sphericalize(p_vertices(obj)),
+              vertices=resize_points(p_vertices(obj)),
               faces=p_faces(obj)
              );   
              
@@ -1701,11 +1690,8 @@ scale(20) difference() {
 }
 */
 
-s=place(canon(ortho(C()),30));
+s=place(plane(ortho(C()),30));
 p_print(s);
 echo(p_irregular_faces(s));
 
-scale (30) p_render(shell(s),false,false,true);
-
-
-         
+scale (17) p_render(shell(s),false,false,true);
