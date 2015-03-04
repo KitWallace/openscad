@@ -54,7 +54,7 @@ Done :
        
 to do
        canon still fails if face is extreme - use plane first
-       last updated 1 March 2015 20:00
+       last updated 4 March 2015 11:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -682,14 +682,14 @@ function plane(obj,n=5) =
     n > 0 
        ? plane(rdual(rdual(obj)),n-1)   
        : poly(name=str("P",p_name(obj)),
-              vertices=p_vertices(obj),
+              vertices=sphericalize(p_vertices(obj)),
               faces=p_faces(obj)
              );
 
 function ndual(obj) =
       let(np=p_vertices(obj))
       poly(name=p_name(obj),
-           vertices =
+           vertices = 
                 [ for (f=p_faces(obj))
                   let (fp=as_points(f,np),
                        c=centre(fp),
@@ -704,9 +704,9 @@ function ndual(obj) =
                 
 function canon(obj,n=5) = 
     n > 0 
-       ? canon(ndual(ndual(obj,n-1)))   
+       ? canon(ndual(ndual(obj)),n-1)   
        : poly(name=str("K",p_name(obj)),
-              vertices=p_vertices(obj),
+              vertices=sphericalize(p_vertices(obj)),
               faces=p_faces(obj)
              );   
              
@@ -1786,7 +1786,10 @@ scale(20) difference() {
 }
 */
 
-s=place(plane(dual(trunc(O())),20));
-scale (30) p_render(shell(s,outer_inset=0.35,inner_inset=0.0,thickness=0.15),false,false,true);
-    
+s=place(canon(ortho(C()),30));
+
+p_print(s);
+ scale (30) p_render(shell(s),false,false,true);
 echo(p_irregular_faces(s));
+
+         
