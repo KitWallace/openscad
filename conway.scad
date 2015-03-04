@@ -49,8 +49,7 @@ Done :
        orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's 
-    other 
-       fun_knot to construct polyhedra from a function fknot()
+   
        
 to do
        canon still fails if face is extreme - use plane first
@@ -1635,91 +1634,7 @@ function modulate(obj) =
     )
 ;  // end modulate
 
-// generate points on the circumference of the tube  
-function circle_points(r, sides,phase=0) = 
-    [for (i=[0:sides-1]) [r * sin(i*360/sides+phase), r * cos(i*360/sides+phase), 0]];
-
-// generate the points along the centre of the tube
-function loop_points(step) = 
-    [for (t=[0:step:360-step]) fknot(t) ];
-
-// generate all points on the tube surface  
-function tube_points(loop, circle_points) = 
-    [for (i=[0:len(loop)-1])
-       let (n1=loop[(i + 1) % len(loop)] - loop[i],
-            n0=loop[i]-loop[(i - 1 +len(loop)) % len(loop)],
-            m = m_to(loop[i], (n0+n1)))
-       for (p = circle_points) 
-          m_transform(p,m)
-    ];
-// generate the faces of the tube surface 
-function kv(i,j,maxi,maxj)= (i % maxi) * maxj + j % maxj;
-
-function loop_faces(segs, sides) =    
-      [for (i=[0:segs -1]) 
-       for (j=[0:sides -1])  
-       let (a=kv(i,j,segs,sides), 
-            b=kv(i,j+1,segs,sides), 
-            c=kv(i+1,j+1,segs,sides),
-            d=kv(i+1,j,segs,sides))
-       [a,b,c,d]    
-     ];
-
-//  create a knot from global function f as a  polyhedron
-function fun_knot(name="not set",step=10,r=0.2,sides=6,phase=0) =
-    let(circle_points = circle_points(r,sides,phase),
-        loop_points = loop_points(step),
-        tube_points = tube_points(loop_points,circle_points),
-        loop_faces = loop_faces(len(loop_points),sides))
-    poly(name=name, vertices = tube_points, faces = loop_faces)
-; 
-
-// t= 0:360 
-function ftrefoil(t,a=2,b=0.75) = 
-    [  sin(t) + a * sin(2 * t),
-       cos(t) - a * cos(2 * t),
-       - b * sin (3 * t)
-    ];            
-            
-function frolling(t,a=0.8) =   
-   let(b=sqrt (1 - a * a))
-   [ a * cos (3 * t) / (1 - b* sin (2 *t)),
-     a * sin( 3 * t) / (1 - b* sin (2 *t)),
-     1.8 * b * cos (2 * t) /(1 - b* sin (2 *t))
-    ];
-    
-function ftorus(t) =   
-   [ cos (t),
-     sin(t) ,
-     0
-    ];
-
-function felipse(t,e=1) =   
-   [ cos (t),
-     e* sin(t) ,
-     0.1*sin(2*t)
-    ];
-function fcardiod(t)=
-  [  2*cos( t) - cos( 2* t),
-     2*sin( t) - sin (2* t),
-     0
-   ];
-
-function fsuper(t,a,e) =
-    [pow(abs(cos(t)), 2/a)* sign(cos(t)),	
-     e*pow(abs(sin(t)), 2/a)* sign(sin(t)),
-     0];
-    
-function fknot(t) = ftrefoil(t);
-// end knot
-
-  
-// object operations
-    
-module ruler(n) {
-   for (i=[0:n-1]) 
-       translate([(i-n/2 +0.5)* 10,0,0]) cube([9.8,5,2], center=true);
-}
+// object trimming
 
 module ground(z=200) {
    translate([0,0,-z]) cube(z*2,center=true);
@@ -1787,9 +1702,10 @@ scale(20) difference() {
 */
 
 s=place(canon(ortho(C()),30));
-
 p_print(s);
- scale (30) p_render(shell(s),false,false,true);
 echo(p_irregular_faces(s));
+
+scale (30) p_render(shell(s),false,false,true);
+
 
          
