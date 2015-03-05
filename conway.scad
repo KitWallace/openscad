@@ -682,9 +682,9 @@ function ndual(obj) =
                   let (fp=as_points(f,np),
                        c=centre(fp),
                        n=average_normal(fp),
-                       dotn = c*n,
+                       cdotn = c*n,
                        ed=average_edge_distance(fp))
-                  reciprocal(n*dotn) * (1+ed)/2
+                  reciprocal(n*cdotn) * (1+ed)/2
                 ]
            ,  
            faces= p_vertices_to_faces(obj)        
@@ -1448,10 +1448,10 @@ function transform(obj,matrix) =
        vertices=transform_points(p_vertices(obj),matrix),
        faces=p_faces(obj));
 
-function place(obj) =
+function place(obj,face_i) =
 // on largest face for printing
-   let (largest_face = max_area(face_areas_index(obj)))
-   let (points =as_points(largest_face,p_vertices(obj)))
+   let (face= face_i == undef ? max_area(face_areas_index(obj)) : p_faces(obj)[face_i])
+   let (points =as_points(face,p_vertices(obj)))
    let (n = normal(points), c=centre(points))
    let (m=m_from(c,-n))
    transform(obj,m)
@@ -1479,11 +1479,10 @@ function invert(obj,p) =
                   
 //modulation
 
-function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_length=0.01,ir=1) = 
+function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_length=0.01,ir=1,nocut=0) = 
    let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
        pf=p_faces(obj),           
        pv=p_vertices(obj))
-
    let(inv=   // corresponding points on inner surface
        [for (i =[0:len(pv)-1])
         let(v = pv[i])
@@ -1526,6 +1525,8 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_leng
             flatten(
               selected_face(face,fn)
                 && min_edge_length(face,pv) > min_edge_length
+                && i  >= nocut    
+              
                 ? [for (j=[0:len(face)-1])   //  replace N-face with 3*N quads 
                   let (a=face[j],
                        inseta = vertex([face,a],newids),
@@ -1690,8 +1691,11 @@ scale(20) difference() {
 }
 */
 
-s=place(plane(ortho(C()),30));
+s=place(canon(plane(gyro(C()))),face_i=0);
 p_print(s);
 echo(p_irregular_faces(s));
 
-scale (17) p_render(shell(s),false,false,true);
+scale (17) p_render(shell(s,thickness=0.3,outer_inset=0.3,inner_inset=0.2,nocut=1),false,false,true);
+
+
+         
