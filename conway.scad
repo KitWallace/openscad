@@ -25,7 +25,7 @@ Done :
        trunc(obj,ratio, nsides) 
        dual(obj)    
        snub(obj,height)
-       expand(obj,height)
+       expand(obj,height), rexpand () to apply recursively 
        reflect(obj)
        gyro(obj)   
        propellor(obj,ratio)
@@ -38,7 +38,8 @@ Done :
        transform(obj,matrix)    matrix transformation of vertices
        insetkis(obj,ratio,height,fn)
        modulate(obj)  with global spherical function fmod()
-       shell(obj,outer_inset,inner_inset,height,min_edge_length)
+       shell(obj,outer_inset_ratio,inner_inset_ratio,
+            ,outer_inset,inner_inset,height,min_edge_length)
        place(obj)  on largest face -use before shell
        crop(obj,minz,maxz) - then render with wire frame
         
@@ -53,7 +54,7 @@ Done :
        
 to do
        canon still fails if face is extreme - use plane first
-       last updated 4 March 2015 18:00
+       last updated 6 March 2015 21:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -114,7 +115,9 @@ module orient_to(centre, normal) {
 }
 
 // vector functions
+function unitv(v)=  v/ norm(v);
 
+function angle_between(u, v) = acos( (u * v) / (norm(u) * norm(v))); 
 function vadd(points,v,i=0) =
       i < len(points)
         ?  concat([points[i] + v], vadd(points,v,i+1))
@@ -1295,6 +1298,11 @@ function reflect(obj) =
           ]
     )
 ;  // end reflect
+
+function ident(obj) =
+          // identity operation 
+    obj
+;  // end nop 
           
 function join(obj) =
     let(name=p_name(obj))
@@ -1474,13 +1482,10 @@ function invert(obj,p) =
             ],
          faces = p_faces(obj)
     );
- 
 
-                  
-//modulation
-
-function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_length=0.01,ir=1,nocut=0) = 
-   let(inner_inset= inner_inset == undef ? outer_inset : inner_inset,
+function shell(obj,outer_inset_ratio=0.2, outer_inset, inner_inset_ratio, inner_inset,thickness=0.2,fn=[],min_edge_length=0.01,ir=1,nocut=0) = 
+// upper and lower inset can be specified by ratio or absolute distance
+   let(inner_inset_ratio= inner_inset_ratio == undef ? outer_inset_ratio : inner_inset_ratio,
        pf=p_faces(obj),           
        pv=p_vertices(obj))
    let(inv=   // corresponding points on inner surface
@@ -1510,9 +1515,16 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_leng
                     [for (i=[0:len(face)-1])
                      let(v=face[i],
                          p = fp[i],
+                         p1= fp[(i+1)%len(face)],
+                         p0=fp[(i-1 + len(face))%len(face)],
+                         sa = angle_between(p0-p,p1-p)/2,
                          op= ofp[i]*ir,
-                         ip = p + (c-p)*outer_inset,
-                         oip = op + (oc-op)*inner_inset)
+                         ip = outer_inset ==  undef 
+                             ? p + (c-p)*outer_inset_ratio 
+                             : p + outer_inset/sin(sa) * unitv(c-p),
+                         oip = inner_inset == undef 
+                             ? op + (oc-op)*inner_inset_ratio 
+                            : op + inner_inset/sin(sa)*unitv(oc-op))
                      [ [[face,v],ip],[[face,-v-1],oip]]
                     ])
              ])          
@@ -1556,12 +1568,13 @@ function shell(obj,outer_inset=0.2,inner_inset,thickness=0.2,fn=[],min_edge_leng
    poly(name=str("S",p_name(obj)),
        vertices=  concat(pv, inv, vertex_values(newv)) ,    
        faces= newf,
-       debug=newids          
+       debug=newv       
        )
 ; // end shell  
                            
 
-           
+// modulation  
+                           
 function modulate_points(points) =
    [for(p=points)
        let(s=xyz_to_spherical(p),
@@ -1639,7 +1652,7 @@ module sky(z=200) {
 function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.3333);
 s= modulate(plane(trunc(plane(kis(trunc(I()))))));
 echo(p_description(s));                    
-t=shell(s,thickness=0.15,outer_inset=0.35,inner_inset=0.2,fn=[6]);              
+t=shell(s,thickness=0.15,outer_inset_ratio=0.35,inner_inset_ratio=0.2,fn=[6]);              
 scale(20)  p_render(t,false,false,true);
 
 */
@@ -1648,7 +1661,7 @@ scale(20)  p_render(t,false,false,true);
 // trefoil knot
 function fknot(t) = ftorus(t);
 s=fun_knot(step=20,r=0.48,sides=9);
-t=shell(s,thickness=0.4,outer_inset=0.5,inner_inset=0.3,fn=[]);              
+t=shell(s,thickness=0.4,outer_inset_ratio=0.5,inner_inset_ratio=0.3,fn=[]);              
  scale(20)  p_render(t,false,false,true);
 
 */
@@ -1656,7 +1669,7 @@ t=shell(s,thickness=0.4,outer_inset=0.5,inner_inset=0.3,fn=[]);
 // torus knot
 function fknot(t) = ftorus(t);
 s=fun_knot(step=90,r=0.7,sides=4,phase=45);
-t=shell(s,thickness=0.5,outer_inset=0.5,inner_inset=0.35,fn=[]);              
+t=shell(s,thickness=0.5,outer_inset_ratio=0.5,inner_inset_ratio=0.35,fn=[]);              
 scale(20)  p_render(t,false,false,true);
 */
 
@@ -1691,11 +1704,8 @@ scale(20) difference() {
 }
 */
 
-s=place(canon(plane(gyro(C()))),face_i=0);
-p_print(s);
-echo(p_irregular_faces(s));
+s=place(p_resize(canon(plane(trunc(I()),100),20),20));
+t=shell(s,thickness=3,fn=[],outer_inset=2,inner_inset=1);
+p_print(t);
+p_render(t,false,false,true);
 
-scale (17) p_render(shell(s,thickness=0.3,outer_inset=0.3,inner_inset=0.2,nocut=1),false,false,true);
-
-
-         
