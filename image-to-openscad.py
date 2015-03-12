@@ -2,9 +2,7 @@
     for inclusion in an openSCAD script
   parameters
     1 image file name
-    2  width in units of the scaled image
-    3  0 = normal, 1 = invented
-    4  openscad name prefix
+    2  width in pixels of the scaled image
     output openscad code on stdout
   
    uses  PIL, numpy
@@ -16,11 +14,11 @@
 from PIL import Image
 import numpy,sys
 
-def surface_to_openSCAD (surface,name,file_name,f) :
-    f.write(name+'_file = "' + file_name  + '";\n')
+def surface_to_openSCAD (surface,file_name,f) :
+    f.write('image_file = "' + file_name  + '";\n')
     maxi = surface.shape[1]-1
     maxj = surface.shape[0]-1
-    f.write(name +'_data = [ \n')
+    f.write('image_data = [ \n')
     for i in range(0, maxi) :
        f.write("[ \n")
        for j in range(0, maxj) :
@@ -40,7 +38,5 @@ pic_resize = pic.resize(dim_resize,Image.ANTIALIAS)
 pic_greyscale = pic_resize.convert("L")
 pic_array = numpy.array(pic_greyscale).reshape((dim_resize[1],dim_resize[0]))
 pic_array2 = pic_array / 256.0
-if invert == 1 :
-   pic_array2 = 1 - pic_array2
    
-surface_to_openSCAD(pic_array2,name,file,sys.stdout)
+surface_to_openSCAD(pic_array2,file,sys.stdout)
