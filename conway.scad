@@ -33,7 +33,8 @@ Done :
        bevel(obj) == trunc(ambo(obj))
        chamfer(obj,ratio)
        whirl(obj,ratio)
-   
+       tt(obj)   convert triangular faces into 4 triangles
+       
    additional operators
        transform(obj,matrix)    matrix transformation of vertices
        insetkis(obj,ratio,height,fn)
@@ -50,11 +51,10 @@ Done :
        orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's 
-   
-       
+          
 to do
        canon still fails if face is extreme - use plane first
-       last updated 6 March 2015 21:00
+       last updated 16 March 2015 21:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -430,7 +430,7 @@ module show_edges(edges,points,r=0.1) {
         show_edge(as_points(edge, points), r); 
 };
         
-module p_render(obj,show_vertices=true,show_edges=true,show_faces=true, rv=0.04, re=0.02) {
+module p_render(obj,show_vertices=false,show_edges=false,show_faces=true, rv=0.04, re=0.02) {
      if(show_faces) 
           polyhedron(p_vertices(obj),p_faces(obj),convexity=10);
      if(show_vertices) 
@@ -1483,7 +1483,7 @@ function invert(obj,p) =
          faces = p_faces(obj)
     );
 
-function shell(obj,outer_inset_ratio=0.2, outer_inset, inner_inset_ratio, inner_inset,thickness=0.2,fn=[],min_edge_length=0.01,ir=1,nocut=0) = 
+function shell(obj,outer_inset_ratio=0.2, outer_inset, inner_inset_ratio, inner_inset,thickness=0.2,fn=[],min_edge_length=0.01,nocut=0) = 
 // upper and lower inset can be specified by ratio or absolute distance
    let(inner_inset_ratio= inner_inset_ratio == undef ? outer_inset_ratio : inner_inset_ratio,
        pf=p_faces(obj),           
@@ -1497,7 +1497,7 @@ function shell(obj,outer_inset_ratio=0.2, outer_inset, inner_inset_ratio, inner_
                 normal(fp)
             ])
         let(av_norm = -vsum(norms)/len(norms))
-            v + thickness*av_norm
+            v + thickness*unitv(av_norm)
         ])
                  
    let (newv =   
@@ -1517,14 +1517,15 @@ function shell(obj,outer_inset_ratio=0.2, outer_inset, inner_inset_ratio, inner_
                          p = fp[i],
                          p1= fp[(i+1)%len(face)],
                          p0=fp[(i-1 + len(face))%len(face)],
-                         sa = angle_between(p0-p,p1-p)/2,
-                         op= ofp[i]*ir,
+                         sa = angle_between(p0-p,p1-p),
+                         bv = (unitv(p1-p)+unitv(p0-p))/2,
+                         op= ofp[i],
                          ip = outer_inset ==  undef 
                              ? p + (c-p)*outer_inset_ratio 
-                             : p + outer_inset/sin(sa) * unitv(c-p),
+                             : p + outer_inset/sin(sa) * bv ,
                          oip = inner_inset == undef 
                              ? op + (oc-op)*inner_inset_ratio 
-                            : op + inner_inset/sin(sa)*unitv(oc-op))
+                             : op + inner_inset/sin(sa) * bv)
                      [ [[face,v],ip],[[face,-v-1],oip]]
                     ])
              ])          
@@ -1691,9 +1692,9 @@ scale(10) p_render(shell(s),false,false,true);
 s=plane(whirl(plane(trunc(I()))));
 p_print(s);
 scale(10) p_render(shell(s,fn=[6]),false,false,true);
-$fn=20;
 
-#*/
+
+*/
 /*
 s=transform(plane(chamfer(plane(chamfer(D())))),m_translate([0,0,0.3])*m_scale([1,1.5,2]));
 t=shell(s,fn=[0]);
@@ -1704,8 +1705,13 @@ scale(20) difference() {
 }
 */
 
-s=place(p_resize(canon(plane(trunc(I()),100),20),20));
-t=shell(s,thickness=3,fn=[],outer_inset=2,inner_inset=1);
-p_print(t);
-p_render(t,false,false,true);
+s=place(plane(kis(T()),20));
+t=shell(s,outer_inset=0.3, inner_inset=0.2,thickness=0.15);
+difference() {
+      scale(20) p_render(t);
+ *     translate([0,-50,0]) cube(100);
+}
 
+
+ 
+   
