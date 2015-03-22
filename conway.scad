@@ -15,8 +15,8 @@ Done :
     poly accessors and renderers  (as 3d object, description, full print, face and vertex analyses)
     
     primitives T(),C(),O(),D(),I(),Y(n),P(n),A(n)
-         variables replaced by functions to encapsulate constants and eliminate sequential problems with declarations
-  
+        all centered and normalized to a mid-scribed radius of 1 
+        
    conway/hart operators 
        kis(obj,ratio, nsides)
        ambo(obj)
@@ -43,23 +43,211 @@ Done :
             ,outer_inset,inner_inset,height,min_edge_length)
        place(obj)  on largest face -use before shell
        crop(obj,minz,maxz) - then render with wire frame
-        
-    canonicalization
-       plane(obj,itr) - planarization using reciprocals of centres
-       canon(obj,itr) - canonicalization using edge tangents
-       p_resize_points()   - resize to a given average radius
+    orientation, centering and resizing
+       p_inscribed_resize_points()  - resize to a given average face centre
+       p_midscribed_resize_points() - resize to a given average edge centre
+       p_circumscribed_resize_points() - resize to a given average vertex
        orient(obj)  - ensure all faces have lhs order (only convex )
          needed for some imported solids eg Georges solids and Johnson
              and occasionally for David's 
+    
+    canonicalization
+       plane(obj,itr) - planarization using reciprocals of centres
+       canon(obj,itr) - canonicalization using edge tangents
           
 to do
        canon still fails if face is extreme - use plane first
-       last updated 16 March 2015 21:00
+       last updated 22 March 2015 10:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
 */
+// seed polyhedra
+function T()= 
+    p_resize(poly(name= "T",
+       vertices= [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
+       faces= [[2,1,0],[3,2,0],[1,3,0],[2,3,1]]
+    ));
+function C() = 
+   p_resize(poly(name= "C",
+       vertices= [
+[ 0.5,  0.5,  0.5],
+[ 0.5,  0.5, -0.5],
+[ 0.5, -0.5,  0.5],
+[ 0.5, -0.5, -0.5],
+[-0.5,  0.5,  0.5],
+[-0.5,  0.5, -0.5],
+[-0.5, -0.5,  0.5],
+[-0.5, -0.5, -0.5]],
+      faces=
+ [
+[ 4 , 5, 1, 0],
+[ 2 , 6, 4, 0],
+[ 1 , 3, 2, 0],
+[ 6 , 2, 3, 7],
+[ 5 , 4, 6, 7],
+[ 3 , 1, 5, 7]]
+   ));
 
+function O() = 
+  let (C0 = 0.7071067811865475244008443621048)
+  p_resize(poly(name="O",
+         vertices=[
+[0.0, 0.0,  C0],
+[0.0, 0.0, -C0],
+[ C0, 0.0, 0.0],
+[-C0, 0.0, 0.0],
+[0.0,  C0, 0.0],
+[0.0, -C0, 0.0]],
+        faces= [
+[ 4 , 2, 0],
+[ 3 , 4, 0],
+[ 5 , 3, 0],
+[ 2 , 5, 0],
+[ 5 , 2, 1],
+[ 3 , 5, 1],
+[ 4 , 3, 1],
+[ 2 , 4, 1]]   
+    ));
+function D() = 
+  let (C0 = 0.809016994374947424102293417183)
+  let (C1 =1.30901699437494742410229341718)
+
+  p_resize(poly(name="D",
+         vertices=[
+[ 0.0,  0.5,   C1],
+[ 0.0,  0.5,  -C1],
+[ 0.0, -0.5,   C1],
+[ 0.0, -0.5,  -C1],
+[  C1,  0.0,  0.5],
+[  C1,  0.0, -0.5],
+[ -C1,  0.0,  0.5],
+[ -C1,  0.0, -0.5],
+[ 0.5,   C1,  0.0],
+[ 0.5,  -C1,  0.0],
+[-0.5,   C1,  0.0],
+[-0.5,  -C1,  0.0],
+[  C0,   C0,   C0],
+[  C0,   C0,  -C0],
+[  C0,  -C0,   C0],
+[  C0,  -C0,  -C0],
+[ -C0,   C0,   C0],
+[ -C0,   C0,  -C0],
+[ -C0,  -C0,   C0],
+[ -C0,  -C0,  -C0]],
+         faces=[
+[ 12 ,  4, 14,  2,  0],
+[ 16 , 10,  8, 12,  0],
+[  2 , 18,  6, 16,  0],
+[ 17 , 10, 16,  6,  7],
+[ 19 ,  3,  1, 17,  7],
+[  6 , 18, 11, 19,  7],
+[ 15 ,  3, 19, 11,  9],
+[ 14 ,  4,  5, 15,  9],
+[ 11 , 18,  2, 14,  9],
+[  8 , 10, 17,  1, 13],
+[  5 ,  4, 12,  8, 13],
+[  1 ,  3, 15,  5, 13]]
+   ));
+   
+function I() = 
+  let(C0 = 0.809016994374947424102293417183)
+  p_resize(poly(name= "I",
+         vertices= [
+[ 0.5,  0.0,   C0],
+[ 0.5,  0.0,  -C0],
+[-0.5,  0.0,   C0],
+[-0.5,  0.0,  -C0],
+[  C0,  0.5,  0.0],
+[  C0, -0.5,  0.0],
+[ -C0,  0.5,  0.0],
+[ -C0, -0.5,  0.0],
+[ 0.0,   C0,  0.5],
+[ 0.0,   C0, -0.5],
+[ 0.0,  -C0,  0.5],
+[ 0.0,  -C0, -0.5]],
+        faces=[
+[ 10 ,  2,  0],
+[  5 , 10,  0],
+[  4 ,  5,  0],
+[  8 ,  4,  0],
+[  2 ,  8,  0],
+[  6 ,  8,  2],
+[  7 ,  6,  2],
+[ 10 ,  7,  2],
+[ 11 ,  7, 10],
+[  5 , 11, 10],
+[  1 , 11,  5],
+[  4 ,  1,  5],
+[  9 ,  1,  4],
+[  8 ,  9,  4],
+[  6 ,  9,  8],
+[  3 ,  9,  6],
+[  7 ,  3,  6],
+[ 11 ,  3,  7],
+[  1 ,  3, 11],
+[  9 ,  3,  1]]
+));
+
+
+function Y(n,h=1) =
+   p_resize(poly(name= str("Y",n) ,
+      vertices=
+      concat(
+        [for (i=[0:n-1])
+            [cos(i*360/n),sin(i*360/n),0]
+        ],
+        [[0,0,h]]
+      ),
+      faces=concat(
+        [for (i=[0:n-1])
+            [(i+1)%n,i,n]
+        ],
+        [[for (i=[0:n-1]) i]]
+      )
+     ));
+
+function P(n,h=1) =
+   p_resize(poly(name=str("P",n) ,
+      vertices=concat(
+        [for (i=[0:n-1])
+            [cos(i*360/n),sin(i*360/n),-h/2]
+        ],
+        [for (i=[0:n-1])
+            [cos(i*360/n),sin(i*360/n),h/2]
+        ]
+      ),
+      faces=concat(
+        [for (i=[0:n-1])
+            [(i+1)%n,i,i+n,(i+1)%n + n]
+        ],
+        [[for (i=[0:n-1]) i]], 
+        [[for (i=[n-1:-1:0]) i+n]]
+      )
+     ));
+        
+function A(n,h=1) =
+   p_resize(poly(name=str("A",n) ,
+      vertices=concat(
+        [for (i=[0:n-1])
+            [cos(i*360/n),sin(i*360/n),-h/2]
+        ],
+        [for (i=[0:n-1])
+            [cos((i+1/2)*360/n),sin((i+1/2)*360/n),h/2]
+        ]
+      ),
+      faces=concat(
+        [for (i=[0:n-1])
+            [(i+1)%n,i,i+n]
+        ],
+        [for (i=[0:n-1])
+            [(i+1)%n,i+n,(i+1)%n + n]
+        ],
+        
+        [[for (i=[0:n-1]) i]], 
+        [[for (i=[n-1:-1:0]) i+n]]
+      )
+     ));
 
 // basic list comprehension functions
 
@@ -295,7 +483,16 @@ function max_area(areas, max=[undef,0], i=0) =
          ?  max_area(areas,areas[i],i+1)
          :  max_area(areas,max,i+1)
       : max[0];
-   
+
+function average_face_normal(fp) =
+     let(fl=len(fp))
+     let(normals=
+           [for(i=[0:fl-1])
+            orthogonal(fp[i],fp[(i+1)%fl],fp[(i+2)%fl])
+           ]
+          )
+     vsum(normals)/len(normals);
+    
 function average_normal(fp) =
      let(fl=len(fp))
      let(unitns=
@@ -455,208 +652,50 @@ module p_print(obj) {
     if(debug!=[]) echo("Debug",debug);
 };
 
-function T()= 
-    poly(name= "T",
-       vertices= [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
-       faces= [[2,1,0],[3,2,0],[1,3,0],[2,3,1]]
-    );
-function C() = 
-   poly(name= "C",
-       vertices= [
-[ 0.5,  0.5,  0.5],
-[ 0.5,  0.5, -0.5],
-[ 0.5, -0.5,  0.5],
-[ 0.5, -0.5, -0.5],
-[-0.5,  0.5,  0.5],
-[-0.5,  0.5, -0.5],
-[-0.5, -0.5,  0.5],
-[-0.5, -0.5, -0.5]],
-      faces=
- [
-[ 4 , 5, 1, 0],
-[ 2 , 6, 4, 0],
-[ 1 , 3, 2, 0],
-[ 6 , 2, 3, 7],
-[ 5 , 4, 6, 7],
-[ 3 , 1, 5, 7]]
-   );
-
-function O() = 
-  let (C0 = 0.7071067811865475244008443621048)
-  poly(name="O",
-         vertices=[
-[0.0, 0.0,  C0],
-[0.0, 0.0, -C0],
-[ C0, 0.0, 0.0],
-[-C0, 0.0, 0.0],
-[0.0,  C0, 0.0],
-[0.0, -C0, 0.0]],
-        faces= [
-[ 4 , 2, 0],
-[ 3 , 4, 0],
-[ 5 , 3, 0],
-[ 2 , 5, 0],
-[ 5 , 2, 1],
-[ 3 , 5, 1],
-[ 4 , 3, 1],
-[ 2 , 4, 1]]   
-    );
-function D() = 
-  let (C0 = 0.809016994374947424102293417183)
-  let (C1 =1.30901699437494742410229341718)
-
-    poly(name="D",
-         vertices=[
-[ 0.0,  0.5,   C1],
-[ 0.0,  0.5,  -C1],
-[ 0.0, -0.5,   C1],
-[ 0.0, -0.5,  -C1],
-[  C1,  0.0,  0.5],
-[  C1,  0.0, -0.5],
-[ -C1,  0.0,  0.5],
-[ -C1,  0.0, -0.5],
-[ 0.5,   C1,  0.0],
-[ 0.5,  -C1,  0.0],
-[-0.5,   C1,  0.0],
-[-0.5,  -C1,  0.0],
-[  C0,   C0,   C0],
-[  C0,   C0,  -C0],
-[  C0,  -C0,   C0],
-[  C0,  -C0,  -C0],
-[ -C0,   C0,   C0],
-[ -C0,   C0,  -C0],
-[ -C0,  -C0,   C0],
-[ -C0,  -C0,  -C0]],
-         faces=[
-[ 12 ,  4, 14,  2,  0],
-[ 16 , 10,  8, 12,  0],
-[  2 , 18,  6, 16,  0],
-[ 17 , 10, 16,  6,  7],
-[ 19 ,  3,  1, 17,  7],
-[  6 , 18, 11, 19,  7],
-[ 15 ,  3, 19, 11,  9],
-[ 14 ,  4,  5, 15,  9],
-[ 11 , 18,  2, 14,  9],
-[  8 , 10, 17,  1, 13],
-[  5 ,  4, 12,  8, 13],
-[  1 ,  3, 15,  5, 13]]
-   );
-   
-function I() = 
-  let(C0 = 0.809016994374947424102293417183)
-  poly(name= "I",
-         vertices= [
-[ 0.5,  0.0,   C0],
-[ 0.5,  0.0,  -C0],
-[-0.5,  0.0,   C0],
-[-0.5,  0.0,  -C0],
-[  C0,  0.5,  0.0],
-[  C0, -0.5,  0.0],
-[ -C0,  0.5,  0.0],
-[ -C0, -0.5,  0.0],
-[ 0.0,   C0,  0.5],
-[ 0.0,   C0, -0.5],
-[ 0.0,  -C0,  0.5],
-[ 0.0,  -C0, -0.5]],
-        faces=[
-[ 10 ,  2,  0],
-[  5 , 10,  0],
-[  4 ,  5,  0],
-[  8 ,  4,  0],
-[  2 ,  8,  0],
-[  6 ,  8,  2],
-[  7 ,  6,  2],
-[ 10 ,  7,  2],
-[ 11 ,  7, 10],
-[  5 , 11, 10],
-[  1 , 11,  5],
-[  4 ,  1,  5],
-[  9 ,  1,  4],
-[  8 ,  9,  4],
-[  6 ,  9,  8],
-[  3 ,  9,  6],
-[  7 ,  3,  6],
-[ 11 ,  3,  7],
-[  1 ,  3, 11],
-[  9 ,  3,  1]]
-);
-
-
-function Y(n,h=1) =
-   poly(name= str("Y",n) ,
-      vertices=
-      resize_points(concat(
-        [for (i=[0:n-1])
-            [cos(i*360/n),sin(i*360/n),0]
-        ],
-        [[0,0,h]]
-      )),
-      faces=concat(
-        [for (i=[0:n-1])
-            [(i+1)%n,i,n]
-        ],
-        [[for (i=[0:n-1]) i]]
-      )
-     );
-
-function P(n,h=1) =
-   poly(name=str("P",n) ,
-      vertices=concat(
-        [for (i=[0:n-1])
-            [cos(i*360/n),sin(i*360/n),-h/2]
-        ],
-        [for (i=[0:n-1])
-            [cos(i*360/n),sin(i*360/n),h/2]
-        ]
-      ),
-      faces=concat(
-        [for (i=[0:n-1])
-            [(i+1)%n,i,i+n,(i+1)%n + n]
-        ],
-        [[for (i=[0:n-1]) i]], 
-        [[for (i=[n-1:-1:0]) i+n]]
-      )
-     );
-        
-function A(n,h=1) =
-   poly(name=str("A",n) ,
-      vertices=concat(
-        [for (i=[0:n-1])
-            [cos(i*360/n),sin(i*360/n),-h/2]
-        ],
-        [for (i=[0:n-1])
-            [cos((i+1/2)*360/n),sin((i+1/2)*360/n),h/2]
-        ]
-      ),
-      faces=concat(
-        [for (i=[0:n-1])
-            [(i+1)%n,i,i+n]
-        ],
-        [for (i=[0:n-1])
-            [(i+1)%n,i+n,(i+1)%n + n]
-        ],
-        
-        [[for (i=[0:n-1]) i]], 
-        [[for (i=[n-1:-1:0]) i+n]]
-      )
-     );
-// normalization amd canonicalisation
+// centering and resizing
         
 function centre_points(points) = 
      vadd(points, - centre(points));
+        
+function p_inscribed_resize(obj,radius=1) =
+    let(pv=centre_points(p_vertices(obj)))
+    let (centres= [for (f=p_faces(obj))
+                       norm(centre(as_points(f,pv)))
+                      ])
+    let (average = ssum(centres) / len(centres))
+    poly(name=p_name(obj),
+         vertices = pv * radius /average,
+         faces=p_faces(obj),
+         debug=centres
+         );
 
-//resize so average radius = radius
-function resize_points(points,radius=1) =
-    let(ps=centre_points(points),
-        an=average_norm(ps))
-    ps * radius /an;
+function p_midscribed_resize(obj,radius=1) =
+    let(pv=centre_points(p_vertices(obj)))
+    let(centres= [for (e=p_edges(obj))
+                  let (ep = as_points(e,pv))
+                  norm((ep[0]+ep[1])/2)
+                  ])
+    let (average = ssum(centres) / len(centres))
+    poly(name=p_name(obj),
+         vertices = pv * radius /average,
+         faces=p_faces(obj),
+         debug=centres
+         );
 
+function p_circumscribed_resize(obj,radius=1) =
+    let(pv=centre_points(p_vertices(obj)))
+    let(average=average_norm(pv))
+    poly(name=p_name(obj),
+         vertices=pv * radius /average,
+         faces=p_faces(obj),
+         debug=average
+    );
+ 
 function p_resize(obj,radius=1) =
-    poly(name=str("n",p_name(obj)),
-         vertices=resize_points(p_vertices(obj),radius),
-         faces=p_faces(obj)
-   );
-      
+    p_circumscribed_resize(obj,radius);
+
+// canonicalization
+
 function rdual(obj) =
     let(np=p_vertices(obj))
     poly(name=p_name(obj),
@@ -1705,13 +1744,10 @@ scale(20) difference() {
 }
 */
 
-s=place(plane(kis(T()),20));
-t=shell(s,outer_inset=0.3, inner_inset=0.2,thickness=0.15);
-difference() {
-      scale(20) p_render(t);
- *     translate([0,-50,0]) cube(100);
-}
-
-
+s=place(T());
+p_print(s);
+t=shell(s,outer_inset=0.4, inner_inset=0,thickness=0.4);
+scale(18) p_render(t);
+  
  
    
