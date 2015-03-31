@@ -1698,22 +1698,6 @@ scale(20)  p_render(t,false,false,true);
 */
 
 /*
-// trefoil knot
-function fknot(t) = ftorus(t);
-s=fun_knot(step=20,r=0.48,sides=9);
-t=shell(s,thickness=0.4,outer_inset_ratio=0.5,inner_inset_ratio=0.3,fn=[]);              
- scale(20)  p_render(t,false,false,true);
-
-*/
-/*
-// torus knot
-function fknot(t) = ftorus(t);
-s=fun_knot(step=90,r=0.7,sides=4,phase=45);
-t=shell(s,thickness=0.5,outer_inset_ratio=0.5,inner_inset_ratio=0.35,fn=[]);              
-scale(20)  p_render(t,false,false,true);
-*/
-
-/*
 s=shell(plane(trunc(plane(kis(plane(trunc(D())), fn=[10])), fn=[10])));
 // s=trunc(plane(kis(T)),fn=[3]);
 p_describe(s);
