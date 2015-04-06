@@ -136,8 +136,7 @@ function O_net(length,a) =
      sc= r(a,bs[1],1),
      sd= r(a,sc,2))        
    dflatten([base,bs,sa,sb,sc,sd]); 
-
-
+     
 function dodecahedron_half(a,base) =
   dflatten([base,[for (i=[0:4]) r(a,base,i)]],2);
      
@@ -161,7 +160,35 @@ function I_net(length,a) =
    let(base = [for (i=[0:2])  // anticlockwise order 
           [ length * cos(i*120), length * sin(i*120), 0]]) 
      icosa_strip(base,a,5);    
-
+   
+function TDi_net(length,a,b) =
+   let(base = [for (i=[0:2])  // anticlockwise order 
+          [ length * cos(i*120), length*sin(i*120),0]] ,
+     
+     sa= r(a,base,1),
+     sb= r(a,base,2),
+     sc =r(b,base,0),
+     sd = r(a,sc,1),
+     se = r(a,sc,2))        
+   dflatten([base,sa,sb,sc,sd,se]); 
+     
+function PDi_net(length,a,b) =
+   let(base = [for (i=[0:2])  // anticlockwise order 
+          [ length * cos(i*120), length*sin(i*120),0]] ,
+     
+     ta= r(a,base,1),
+     tb= r(a,ta,2),
+     tc =r(a,tb,2),
+     td =r(a,tc,2),
+   
+     ba = r(b,base,0),
+     bb = r(a,ba,2),
+     bc = r(a,bb,1),
+     bd = r(a,bc,1),
+     be = r(a,bd,1)
+   )        
+   dflatten([base,ta,tb,tc,td,ba,bb,bc,bd,be]); 
+     
 function find(key,array) =  array[search([key],array)[0]];
    
 dihedral_angles = [
@@ -169,14 +196,31 @@ dihedral_angles = [
     ["C",90],
     ["O",109.47],
     ["D",116.57],
-    ["I",138.19]];
+    ["I",138.19],
+    ["TDi",70.53,2*70.53],
+    ["PDi",138,75],
+    
+    ];
 
-$fn=steps;  
+$fn=steps; 
+$t=0.5;  
 complete=ramp($t,0.04) ;  // 0 .. 1
-
-dihedral_angle =  find("T",dihedral_angles)[1];
+dihedral_angle =  find("I",dihedral_angles)[1];
 a= 180 - (180 - dihedral_angle)*complete;  
-net = T_net(length,a);
+
+net = I_net(length,a);
+echo(len(net),net);
+show_faces(net);
+
+
+/*
+dihedral_angle_a =  find("TDi",dihedral_angles)[1];
+dihedral_angle_b =  find("TDi",dihedral_angles)[2];
+a= 180 - (180 - dihedral_angle_a)*complete;  
+b= 180 - (180 - dihedral_angle_b)*complete;  
+
+net = TDi_net(length,a,b);
 echo(len(net),net);
 show_faces(net);
    
+*/
