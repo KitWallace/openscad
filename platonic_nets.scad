@@ -4,13 +4,13 @@
 
 */
 //thickness of 'paper'
-thickness=0.5;
+thickness=2;
 // length of side
 length=10;
 
 //quality of curves
-steps=4;
-scale=1;
+steps=20;
+scale=3;
 
 colors=["green","blue","red","gold","Hotpink","silver","teal","purple",];
 
@@ -102,7 +102,7 @@ function flatten(l) = [ for (a = l) for (b = a) b ] ;
 
 function dflatten(l,d=2) =
 // hack to flattened mixed list and list of lists
-   flatten([for (p = l) depth(p) > d ? [for (q=p) q] : [p]]);
+   flatten([for (a = l) depth(a) > d ? dflatten(a, d) : [a]]);
         
 function ramp(t,dwell) =
 // to shape the animation to give a dwell at begining and end
@@ -174,9 +174,9 @@ dihedral_angles = [
 $fn=steps;  
 complete=ramp($t,0.04) ;  // 0 .. 1
 
-dihedral_angle =  find("I",dihedral_angles)[1];
+dihedral_angle =  find("T",dihedral_angles)[1];
 a= 180 - (180 - dihedral_angle)*complete;  
-net = I_net(length,a);
+net = T_net(length,a);
 echo(len(net),net);
 show_faces(net);
    
