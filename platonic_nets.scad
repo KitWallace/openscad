@@ -4,13 +4,13 @@
 
 */
 //thickness of 'paper'
-thickness=2;
+thickness=3;
 // length of side
 length=10;
 
 //quality of curves
 steps=20;
-scale=3;
+scale=2;
 
 colors=["green","blue","red","gold","Hotpink","silver","teal","purple",];
 
@@ -62,7 +62,21 @@ function rotate_about_edge(a,face,edge) =
      let (v1 = face[edge], v2= face[(edge+1) %len(face)])
      let (m = m_rotate_about_line(a,v1,v2))
      face_transform(face,m);
-    
+
+function orthogonal(v0,v1,v2) =  cross(v1-v0,v2-v1);
+
+function normal(face) =
+     let (n=orthogonal(face[0],face[1],face[2]))
+     - n / norm(n);
+     
+function vsum(points,i=0) =  
+      i < len(points)
+        ?  (points[i] + vsum(points,i+1))
+        :  [0,0,0];
+
+function centre(points) = 
+      vsum(points) / len(points);
+     
 function reverse(l,shift=0) = 
      [for (i=[0:len(l)-1]) l[(len(l)-1-i + shift)%len(l)]];   
                         
@@ -77,7 +91,14 @@ function rr(a,face,edges,i=0)  =
      i < len(edges)
        ? rr(a,r(a,face,edges[i]),edges,i+1) 
        : face;
-     
+
+function place(faces,face_i) =
+   let (pface=faces[face_i])
+   let (n = normal(pface), c=centre(pface))
+   let (m=m_from(c,-n))
+   [for(face=faces) face_transform(face,m)]
+;
+    
 module show_face(s,t=thickness) {
 // render (convex) face by hulling spheres placed at the vertices
     hull()
@@ -198,19 +219,19 @@ dihedral_angles = [
     ["D",116.57],
     ["I",138.19],
     ["TDi",70.53,2*70.53],
-    ["PDi",138,75],
-    
-    ];
+    ["PDi",138,75]  
+   ];
 
 $fn=steps; 
-$t=0.5;  
+$t=0.7;    // remove to animate
 complete=ramp($t,0.04) ;  // 0 .. 1
 dihedral_angle =  find("I",dihedral_angles)[1];
 a= 180 - (180 - dihedral_angle)*complete;  
 
 net = I_net(length,a);
-echo(len(net),net);
-show_faces(net);
+pnet = place(net,8);   // so modle is printable
+echo(len(pnet),pnet);
+scale(scale) show_faces(pnet);
 
 
 /*
