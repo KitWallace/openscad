@@ -361,6 +361,23 @@ function tO_net(length) =
         ]
         );
 
+
+function tO_net_v2(length) =
+    let(sq=0,hex=1)
+    fold(
+        name="Rhombic Dodecahedron",
+        faces =[regular_face(length,4),regular_face(length,6)],
+        dihedral_angles=[109+28/60,125+16/60],
+        net= 
+        [ hex, [[0,sq,1],[2,hex,1]],
+               [[1,hex],[3,sq,1]],
+               [[2,sq,1],[2,hex,1]],
+               [[3,hex],[3,sq,1]],
+               [[4,sq,1],[[2,hex,1],[3,hex]]],
+               [[5,hex],[3,sq,1]]
+        ]
+        );
+
 function DP3_net (length) =
     let(tri=0)
     fold(
@@ -389,15 +406,7 @@ function test(length) =
 //        net = [tri,[1,tri],[2,tri], [[0,tri],[1,tri]]]
         );
         
-
 $t=1;
-pfold = DP5_net(length);
+pfold = tO_net_v2(length);
 echo(fold_net(pfold));
 fold_render(pfold,$t);
-
-
-       
-
-
-
-
