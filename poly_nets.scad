@@ -121,12 +121,6 @@ function r(a,face,edge=0) =
 // and vertices are ordered anticlockwise   
      reverse(rotate_about_edge(a,face,edge),shift=edge+2);
 
-function rr(a,face,edges,i=0)  =
-// apply r to a sequence of edges
-     i < len(edges)
-       ? rr(a,r(a,face,edges[i]),edges,i+1) 
-       : face;
-
 function face_edge(face,edge) =
     [face[edge], face[(edge+1) %len(face)]];
 
@@ -154,7 +148,10 @@ function rp(a,sq,sq_edge,tri,tri_edge=0) =
           md =  m_rotate_about_line(angle, sq_corner, sq_corner +sq_normal), 
           d_tri= face_transform(c_tri,md) //rotate about edge[0] normal to the plane of sq
           )
-     r(a,d_tri);   // finally rotate tri about the common edge
+    r(a,d_tri,tri_edge);   // finally rotate tri about the common edge
+ //   [a_tri,b_tri,c_tri,d_tri, r(a,d_tri,tri_edge),angle]
+ 
+     ;
 
 function place(faces,face_i) =
 // place the net so that face_i is on the xy plane
@@ -181,7 +178,7 @@ function turtle_path(steps,pos=[0,0,0],dir=0,i=0,closed=false) =
       : closed ? [pos] : [] ;   
 
 function regular_face(length,sides) =
-     turtle_path(flatten([for(i=[1:sides]) [length,["L",359.99999/sides]]]));
+     turtle_path(flatten([for(i=[1:sides]) [length,["L",360/sides]]]));
 
 function rhomboid_face(length,angle) =
      turtle_path(flatten([for(i=[1:2]) [length,["L",angle],length,["L",180-angle]]]));
@@ -190,9 +187,10 @@ function rhomboid_face(length,angle) =
 // rendering  
 
 colors=["green","blue","red","fuchsia",
-        "Hotpink","silver","teal","purple",
-        "black","white","grey","orange",
-        "paleGreen","darkred","greenyellow"
+        "Hotpink","aqua","teal","purple",
+        "black","tan","gold","orange",
+        "paleGreen","slateblue","greenyellow",
+     
 ];
 
 module show_edge(e,r=2) {
@@ -225,215 +223,181 @@ function ramp(t,dwell) =
          ? 1
          :  ( t-dwell) /(1 - 2 * dwell);
    
-// platonic solid functions
-function S_net(length,a) =
-   let(base = [[0,0,0],[length,0,0],[length,length,0]],
-     bs = [for (i=[0:2]) r(a,base,i)])
-   dflatten([base,bs]);
-
-function T_net(length,a) =
-   let(base = [for (i=[0:2])  // anticlockwise order 
-          [ length * cos(i*120), length*sin(i*120),0]] ,
-     bs = [for (i=[0:2]) r(a,base,i)])
-   dflatten([base,bs]);
-
-function C_net(length,a) =
-   let(base = [for (i=[0:3])  // anticlockwise order 
-          [ length * cos(i*90), length*sin(i*90),0]] ,
-       bs = [for (i=[0:3]) r(a,base,i)],
-       top = r(a,bs[0],2))
-   dflatten([base,bs,top]);
-   
-function O_net(length,a) =
-   let(base = [for (i=[0:2])  // anticlockwise order 
-          [ length * cos(i*120), length*sin(i*120),0]] ,
-     bs = [for (i=[0:2]) r(a,base,i)],
-     sa= r(a,bs[2],2),
-     sb= r(a,bs[1],2),
-     sc= r(a,bs[1],1),
-     sd= r(a,sc,2))        
-   dflatten([base,bs,sa,sb,sc,sd]); 
-
-
-function dodecahedron_half(a,base) =
-  dflatten([base,[for (i=[0:4]) r(a,base,i)]],2);
+function tface(faces,hinges,current,step) =
+     let(side = step[0],   // step
+        face_spec = step[1],
+        face = face_spec[0] == undef ? face_spec : face_spec[0],
+        face_side = face_spec[0] == undef ? 0 : face_spec[1],
+        a = step[2] == undef ? hinges[0] : hinges[step[2]])
+     rp(a,current,side,faces[face],face_side); 
+                    
+function rrp(faces,hinges,tree,current) =
+    let(root= tree[0])
+    let (troot = current == undef ? faces[root] : tface(faces,hinges,current,root))
+    concat ( [troot],
+             len(tree) > 1
+             ?[for (i=[1:len(tree) -1])
+              let(step = tree[i])
+              depth(step) == 1   //  transformation
+                  ? [tface(faces,hinges,troot,step)]
+                  : rrp(faces,hinges,step,troot)  // subtree
+              ]
+             :[]
+            );           
+            
+function fold(name,faces,dihedral_angles,net) =
+     [name,faces,dihedral_angles,net];
      
-function D_net(length,a) =
-  let(base = 
-       [for (i=[0:4])  // anticlockwise order 
-          [ length * cos(i*72), length*sin(i*72),0]] , 
-      bottom_half = dodecahedron_half(a,base),
-      top_half= dodecahedron_half(a,rr(a,base,[0,2,3])))
-  dflatten([bottom_half,top_half],2);
-     
-function icosa_strip(base,a,n) =
-   n==0 
-      ? []
-      :  concat( 
-           [base,r(a,base,2),r(a,base,0), r(a,r(a,base,0),2)],
-            icosa_strip(r(a,r(a,base,1),2),a,n-1)
-         );
-           
-function I_net(length,a) =
-   let(base = [for (i=[0:2])  // anticlockwise order 
-          [ length * cos(i*120), length * sin(i*120), 0]]) 
-     icosa_strip(base,a,5); 
+function fold_name(f) = f[0];
+function fold_faces(f) = f[1];
+function fold_dihedral_angles(f) = f[2];
+function fold_net(f) = f[3];
 
-// bipyramids
-function TDi_net(length,a,b) =
-   let(base = [for (i=[0:2])  // anticlockwise order 
-          [ length * cos(i*120), length*sin(i*120),0]] ,
-     
-     sa= r(a,base,1),
-     sb= r(a,base,2),
-     sc =r(b,base,0),
-     sd = r(a,sc,1),
-     se = r(a,sc,2))        
-   dflatten([base,sa,sb,sc,sd,se]); 
-     
-function PDi_net(length,a,b) =
-   let(base = [for (i=[0:2])  // anticlockwise order 
-          [ length * cos(i*120), length*sin(i*120),0]] ,
-     
-     ta= r(a,base,1),
-     tb= r(a,ta,2),
-     tc =r(a,tb,2),
-     td =r(a,tc,2),
-   
-     ba = r(b,base,0),
-     bb = r(a,ba,2),
-     bc = r(a,bb,1),
-     bd = r(a,bc,1),
-     be = r(a,bd,1)
-   )        
-   dflatten([base,ta,tb,tc,td,ba,bb,bc,bd,be]); 
-     
-   
-// archimedean solids
+module fold_render(fold, complete) {
+   hinges = [for (angle = fold_dihedral_angles(fold) ) 180 -(180 - angle)*complete];
+   faces = dflatten(rrp(fold_faces(fold),hinges,fold_net(fold)));
+   echo(len(faces),faces);
+   show_faces(faces);   
+}
 
-function aC(length,a) =
-   let(sq= regular_face(length,4),
-       tri= regular_face(length,3),
-   t1= rp(a,sq,2,tri),
-   t2 =rp(a,sq,1,tri),
-   t3 =rp(a,sq,0,tri),
-   s1= rp(a,t2,2,sq),
-   s2= rp(a,t2,1,sq),
-   t4= rp(a,s1,2,tri),    
-   t5= rp(a,s2,2,tri),   
-   s3= rp(a,t5,1,sq),
-   t6= rp(a,s3,2,tri),
-   s4= rp(a,t4,2,sq),  
-   s5= rp(a,t4,1,sq),  
-   t7= rp(a,s5,1,tri),  
-   t8= rp(a,s5,3,tri) 
-
-       )
-   [sq,t1,t2,t3,s1,s2,t4,t5,s3,t6,s4,s5,t7,t8];
-
-function tO(length,a,b) =
-   let(sq= regular_face(length,4),
-       hex=regular_face(length,6)
-   ,hex1=hex,
-   ,hex2=rp(a,hex1,1,hex)
-   ,hex3=rp(a,hex1,3,hex) // bad
-   ,hex4=rp(a,hex1,5,hex)
-   ,sq1 =rp(b,hex1,0,sq)
-   ,sq2= rp(b,hex1,2,sq)
-   ,sq3= rp(b,hex1,4,sq)   
-       
-   ,hex5=rp(b,sq1,2,hex) 
-   ,hex6=rp(b,sq2,2,hex)
-   ,hex7=rp(b,sq3,2,hex)
-   ,sq4= rp(b,hex2,3,sq)
-   ,sq5= rp(b,hex3,3,sq)
-   ,sq6= rp(b,hex4,3,sq)
-       
-   ,hex8=rp(a,hex5,3,hex) 
+function D_net(length) =
+   let (p=0)
+   fold (
+        name = "Dodecahedron",
+        faces= [regular_face(length,5)],
+        dihedral_angles=[125.264],
+        net =  [p,[0,p],[1,p],[2,p],[3,p],
+                  [[4,p], [[2,p], [[3,p],[1,p],[2,p],[3,p],[4,p]]]]]
+        );
  
-       )
-   [hex1,hex2,hex3,hex4,hex5,hex6,hex7,hex8, sq1,sq2,sq3,sq4,sq5,sq6];
-   
-function daC(length,a) =
-   let(rhoml = rhomboid_face(length,70+32/60),
-       rhomr = rhomboid_face(length,180-(70+32/60)),
-   r1=rhomr
-   ,r2=rp(a,r1,2,rhomr)
-   ,r3=rp(a,r2,1,rhomr)
-   ,r4=rp(a,r3,2,rhoml)
-   ,r5=rp(a,r4,3,rhoml)
-   ,r6=rp(a,r5,2,rhomr)
-   ,r7=rp(a,r6,1,rhomr)
-   ,r8=rp(a,r7,2,rhoml)
-   ,r9=rp(a,r8,3,rhoml)
-   ,r10=rp(a,r9,2,rhomr)
-   ,r11=rp(a,r10,1,rhomr)
-   ,r12=rp(a,r11,2,rhoml)
-    
-   )
-   [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12];
+function I_net(length) =
+   let (t=0)
+   fold (
+        name = "Icosahedron",
+        faces= [regular_face(length,3)],
+        dihedral_angles=[138 +11/60],
+        net = [t,[0,t],[[1,t],[2,t],[[1,t],[1,t],[[2,t],[2,t], [[1,t],[1,t],[[2,t],[2,t]]]]]], [[2,t],[1,t],[[2,t], [2,t],[[1,t],[1,t],[[2,t],[2,t]]]]]] 
+        );
 
-dihedral_angles = [
-    ["T", 70.53],
-    ["C",90],
-    ["O",109.47],
-    ["D",116.57],
-    ["I",138.19],
-    ["TDi",70.53,2*70.53],
-    ["PDi",138,75] ,
-    ["aC",125.264],
-    ["tO",109+28/60,125+16/60],
-    ["daC",120]
-   ];             
+function T_net(length) =
+   let (tri=0)
+   fold (
+        name = "Tetrahedron",
+        faces= [regular_face(length,3)],
+        dihedral_angles=[70+32/60],
+        net =  [tri,[0,tri],[1,tri],[2,tri]]
+        );
 
-/*
-$fn=4; 
-$t=0.2;    // remove to animate
-complete=ramp($t,0.04) ;  // 0 .. 1
-dihedral_angle_a =  find("tO",dihedral_angles)[1];
-dihedral_angle_b =  find("tO",dihedral_angles)[2];
-a= 180 - (180 - dihedral_angle_a)*complete;  
-b= 180 - (180 - dihedral_angle_b)*complete;  
-      
-net = tO(length,a,b);
-// echo(net);
-scale(scale) show_faces(net);
+function C_net(length) =
+   let (sq=0)
+   fold (
+        name = "Cube",
+        faces= [regular_face(length,4)],
+        dihedral_angles=[90],
+        net =  [sq, [0,sq], [1,sq] , [2,sq], [[3,sq],[2,sq] ]] 
+        );
 
-*/
-/*
-f = rhomboid_face(20,70+32/60);
-translate([100,0,0]) show_face(f);
-f1= f; //r(150,f,2);
- rf=rp(150,f1,2,f,debug=true);
- echo(rf);
-color("grey") show_face(f1);
-color("red") show_face(rf[0]);
-color("green",0.5) show_face(rf[1]);
-color("blue")  show_face(rf[2]);
-color("pink",0.5) show_face(rf[3]);
- color("gold") show_face(rf[4]);
+function O_net(length) =
+   let (tri=0)
+   fold (
+        name = "Octahedron",
+        faces= [regular_face(length,3)],
+        dihedral_angles=[109+28/60],
+        net =  [tri, [0,tri] , [[1,tri],[2,tri], [[1,tri],[2,tri]]],[[2,tri], [2,tri]]] 
 
-*/
+        );
+function tC_net(length) =
+   let (oct=0,tri=1)
+   fold (
+        name = "Truncated Cube",
+        faces= [regular_face(length,8),regular_face(length,3)],
+        dihedral_angles=[90, 125.264],
+        net = [oct,[0,oct],
+                   [1,tri,1],
+                   [[2,oct],[3,tri,1],[5,tri,1],
+                                    [[4,oct],[3,tri,1],[5,tri,1]]],
+                   [3,tri,1],
+                   [4,oct],
+                   [5,tri,1],
+                   [6,oct],
+                   [7,tri,1]
+               ]           
 
-$fn=4; 
-$t=0.6;    // remove to animate
-complete=ramp($t,0.04) ;  // 0 .. 1
-dihedral_angle_a =  find("daC",dihedral_angles)[1];
-a= 180 - (180 - dihedral_angle_a)*complete;  
-      
-net = place(daC(length,a),6);
-// echo(net);
-scale(scale) show_faces(net);
+        );
+        
+function aC_net(length) =
+   let (tri=0,sq=1)
+   fold (
+        name = "Cubeoctahedron",
+        faces= [regular_face(length,3),regular_face(length,4)],
+        dihedral_angles=[125.264],
+        net = [tri,[[0,sq],[0,tri],[2,tri]],
+                   [[1,sq],[[2,tri],[[1,sq], [2,tri]]]],
+                   [[2,sq],[[2,tri],[2,sq],[[1,sq],[1,tri],[3,tri]]]]
+              ]
+        );
+        
+function daC_net(length) =
+    let(a=0,b=1)
+    fold(
+        name="Rhombic Dodecahedron",
+        faces =[rhomboid_face(length,109+28/60),rhomboid_face(length,180 - (109+28/60))],
+        dihedral_angles=[120],
+        net= [ a,[[2,a],[[1,a], [[2,b],  [[3,b],[[2,a], [[1,a], [[2,b], [[3,b], [[2,a],[[1,a],[2,b]]]]]]]]]]]]
+
+        );
+
+function tO_net(length) =
+    let(sq=0,hex=1)
+    fold(
+        name="Rhombic Dodecahedron",
+        faces =[regular_face(length,4),regular_face(length,6)],
+        dihedral_angles=[125+16/60,109+28/60],
+        net= 
+        [ hex, [0,sq],
+               [[1,hex],[5,sq], [[4,hex],[1,sq]]],
+               [3,hex],
+               [[5,hex], [1,sq], [4,hex], [[2,hex],[5,sq], [[4,hex],[1,sq]]]]
+        ]
+        );
+
+function DP3_net (length) =
+    let(tri=0)
+    fold(
+       name="Triangular dipyramid",
+       faces= [regular_face(length,3)],
+       dihedral_angles =[70.53,2*70.53],
+       net= [tri, [[1,tri,0], [1,tri,0]],[[2,tri,1], [[1,tri,0],[2,tri,0]]]]
+    );
+
+function DP5_net(length) =
+     let (tri=0)
+     fold(
+         name = "Pentagonal Dipyramid",
+         faces= [regular_face(length,3)],
+         dihedral_angles=[138,75],
+         net= [tri, [[2,tri], [[2,tri],[[2,tri], [2,tri] ]]], [[1,tri,1], [[1,tri], [[2,tri], [[2,tri], [2,tri]]]]]]
+         
+     );
+function test(length) =
+    let (tri=0)
+   fold (
+        name = "test",
+        faces= [regular_face(length,3)],
+        dihedral_angles=[109+28/60],
+        net = [tri,[0,tri],[1,tri], [[2,tri], [[2,tri],[1,tri]]]] 
+//        net = [tri,[1,tri],[2,tri], [[0,tri],[1,tri]]]
+        );
+        
+
+$t=1;
+pfold = DP5_net(length);
+echo(fold_net(pfold));
+fold_render(pfold,$t);
 
 
-/*
-dihedral_angle_a =  find("TDi",dihedral_angles)[1];
-dihedral_angle_b =  find("TDi",dihedral_angles)[2];
-a= 180 - (180 - dihedral_angle_a)*complete;  
-b= 180 - (180 - dihedral_angle_b)*complete;  
+       
 
-net = TDi_net(length,a,b);
-echo(len(net),net);
-show_faces(net);
-   
-*/
+
+
+
