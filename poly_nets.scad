@@ -253,11 +253,13 @@ function fold_faces(f) = f[1];
 function fold_dihedral_angles(f) = f[2];
 function fold_net(f) = f[3];
 
-module fold_render(fold, complete) {
+module fold_render(fold, complete,base_face) {
    hinges = [for (angle = fold_dihedral_angles(fold) ) 180 -(180 - angle)*complete];
    faces = dflatten(rrp(fold_faces(fold),hinges,fold_net(fold)));
    echo(len(faces),faces);
-   show_faces(faces);   
+   if(base_face== undef)
+        show_faces(faces); 
+   else show_faces(place(faces,base_face)) ;
 }
 
 function D_net(length) =
@@ -362,6 +364,20 @@ function tO_net(length) =
         );
 
 
+function tT_net(length) =
+    let(tri=0,hex=1)
+    fold(
+        name="Truncated Tetrahedron",
+        faces =[regular_face(length,3),regular_face(length,6)],
+        dihedral_angles=[70+32/60,109+28/60],
+        net= 
+        [ hex, [0,tri,1],
+               [[1,hex],[5,tri,1],[[4,hex],[1,tri,1],[[2,hex],[5,tri,1]]]]
+            
+        ]
+        );
+
+
 function tO_net_v2(length) =
     let(sq=0,hex=1)
     fold(
@@ -396,6 +412,7 @@ function DP5_net(length) =
          net= [tri, [[2,tri], [[2,tri],[[2,tri], [2,tri] ]]], [[1,tri,1], [[1,tri], [[2,tri], [[2,tri], [2,tri]]]]]]
          
      );
+     
 function test(length) =
     let (tri=0)
    fold (
@@ -406,7 +423,7 @@ function test(length) =
 //        net = [tri,[1,tri],[2,tri], [[0,tri],[1,tri]]]
         );
         
-$t=1;
-pfold = tO_net_v2(length);
+$t=0.5;
+pfold = tT_net(length);
 echo(fold_net(pfold));
-fold_render(pfold,$t);
+fold_render(pfold,$t,4);
