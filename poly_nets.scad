@@ -224,10 +224,10 @@ function ramp(t,dwell) =
          :  ( t-dwell) /(1 - 2 * dwell);
    
 function tface(faces,hinges,current,step) =
-     let(side = step[0],   // step
+     let(side =  len(step) == undef ? step : step[0],   // step
         face_spec = step[1],
-        face = face_spec[0] == undef ? face_spec : face_spec[0],
-        face_side = face_spec[0] == undef ? 0 : face_spec[1],
+        face = face_spec==undef ? 0 : face_spec[0] == undef ? face_spec : face_spec[0],
+        face_side = face_spec==undef ? 0 : face_spec[0] == undef ? 0 : face_spec[1],
         a = step[2] == undef ? hinges[0] : hinges[step[2]])
      rp(a,current,side,faces[face],face_side); 
                     
@@ -238,7 +238,7 @@ function rrp(faces,hinges,tree,current) =
              len(tree) > 1
              ?[for (i=[1:len(tree) -1])
               let(step = tree[i])
-              depth(step) == 1   //  transformation
+              depth(step) <= 1   //  transformation
                   ? [tface(faces,hinges,troot,step)]
                   : rrp(faces,hinges,step,troot)  // subtree
               ]
@@ -268,8 +268,8 @@ function D_net(length) =
         name = "Dodecahedron",
         faces= [regular_face(length,5)],
         dihedral_angles=[125.264],
-        net =  [p,[0,p],[1,p],[2,p],[3,p],
-                  [[4,p], [[2,p], [[3,p],[1,p],[2,p],[3,p],[4,p]]]]]
+        net =  [p,0,1,2,3,
+                  [[4], [[2], [[3],1,2,3,4]]]]
         );
  
 function I_net(length) =
@@ -278,7 +278,7 @@ function I_net(length) =
         name = "Icosahedron",
         faces= [regular_face(length,3)],
         dihedral_angles=[138 +11/60],
-        net = [t,[0,t],[[1,t],[2,t],[[1,t],[1,t],[[2,t],[2,t], [[1,t],[1,t],[[2,t],[2,t]]]]]], [[2,t],[1,t],[[2,t], [2,t],[[1,t],[1,t],[[2,t],[2,t]]]]]] 
+        net = [t,0,[[1],2,[[1],1,[[2],2, [[1],1,[[2],2]]]]], [[2],1,[[2], 2,[[1],1,[[2],2]]]]] 
         );
 
 function T_net(length) =
@@ -287,7 +287,7 @@ function T_net(length) =
         name = "Tetrahedron",
         faces= [regular_face(length,3)],
         dihedral_angles=[70+32/60],
-        net =  [tri,[0,tri],[1,tri],[2,tri]]
+        net =  [tri,0,1,2]
         );
 
 function C_net(length) =
@@ -296,7 +296,7 @@ function C_net(length) =
         name = "Cube",
         faces= [regular_face(length,4)],
         dihedral_angles=[90],
-        net =  [sq, [0,sq], [1,sq] , [2,sq], [[3,sq],[2,sq] ]] 
+        net =  [sq,0,1,2,[[3],2]] 
         );
 
 function O_net(length) =
@@ -305,7 +305,7 @@ function O_net(length) =
         name = "Octahedron",
         faces= [regular_face(length,3)],
         dihedral_angles=[109+28/60],
-        net =  [tri, [0,tri] , [[1,tri],[2,tri], [[1,tri],[2,tri]]],[[2,tri], [2,tri]]] 
+        net =  [tri, 0, [[1],2,[[1],2]],[[2], 2]] 
 
         );
 function tC_net(length) =
@@ -424,6 +424,6 @@ function test(length) =
         );
         
 $t=0.5;
-pfold = tT_net(length);
+pfold = T_net(length);
 echo(fold_net(pfold));
-fold_render(pfold,$t,4);
+fold_render(pfold,$t);
