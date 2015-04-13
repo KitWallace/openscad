@@ -423,7 +423,8 @@ function test(length) =
 //        net = [tri,[1,tri],[2,tri], [[0,tri],[1,tri]]]
         );
         
-$t=0.5;
-pfold = T_net(length);
+$t=0.5;  //remove to animate
+complete=ramp($t,0.05);
+pfold = C_net(length);
 echo(fold_net(pfold));
-fold_render(pfold,$t);
+fold_render(pfold,complete);
