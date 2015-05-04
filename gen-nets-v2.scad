@@ -8,8 +8,8 @@ with thanks to George Hart whose javascript version http://www.georgehart.com/vi
 Code licensed under the Creative Commons - Attribution - Share Alike license.
 
 The project is being documented in my blog 
-   http://kitwallace.tumblr.com/tagged/conway
-
+   http://kitwallace.tumblr.com/tagged/conway  for the conway operators
+and  http://kitwallace.tumblr.com/tagged/net  for work on net generation
 Done :
     poly object constructor 
     poly accessors and renderers  (as 3d object, description, full print, face and vertex analyses)
