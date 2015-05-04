@@ -54,10 +54,14 @@ Done :
     canonicalization
        plane(obj,itr) - planarization using reciprocals of centres
        canon(obj,itr) - canonicalization using edge tangents
+       
+    net generation and rendering
+       p_create_net(obj)
+       p_render_net(obj,net)
           
 to do
        canon still fails if face is extreme - use plane first
-       last updated 22 March 2015 10:00
+       last updated 4 May 2015 22:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -374,6 +378,18 @@ function value_of(key, list) =
 
 // dictionary shorthand assuming present
 function find(key,array) =  array[search([key],array)[0]];
+
+//sort a key value dictionary
+function quicksort_kv(kvs) = 
+//  kv[0] is the value to sort on,  kv[1] is the object sorted
+ len(kvs)>0
+     ? let( 
+         pivot   = kvs[floor(len(kvs)/2)][0], 
+         lesser  = [ for (y = kvs) if (y[0]  < pivot) y ], 
+         equal   = [ for (y = kvs) if (y[0] == pivot) y ], 
+         greater = [ for (y = kvs) if (y[0]  > pivot) y ] )
+          concat( quicksort_kv(lesser), equal, quicksort_kv(greater))
+      : [];
   
 function count(val, list) =  // number of occurances of val in list
    ssum([for(v= list) v== val ? 1 :0]);
@@ -385,6 +401,19 @@ function distinct(list,dlist=[],i=0) =  // return only distinct items of d
              ? distinct(list,dlist,i+1)
              : distinct(list,concat(dlist,list[i]),i+1)
       ;
+
+// queue functions 
+function head(queue) = 
+           len(queue) > 0
+               ? queue[len(queue)-1]
+               : undef; 
+function enque(queue,item) = dflatten(concat(item,queue),1);         
+function deque(queue) =
+ // remove the last entry in the queue
+    len(queue) > 1
+        ? [for (i=[0:len(queue)-2]) queue[i]]
+        : [];
+
 
 // points functions
         
@@ -498,21 +527,29 @@ function face_with_edge(edge,faces) =
            
 function dihedral_angle(edge,faces,points)=
     let(f0 = face_with_edge(edge,faces),
-        f1 = face_with_edge(reverse(edge),faces)
+        f1 = face_with_edge(reverse(edge),faces),
+        p0 = as_points(f0,points),
+        p1 = as_points(f1,points),
+        n0 = normal(p0),
+        n1 = normal(p1),
+        angle =  angle_between(n0,n1),
+        dot=(centre(p0)-centre(p1))*n1,
+        dihedral = dot < 0 ? 180-angle  : 180 +  angle  
         )
-    let(angle = 
-           angle_between(
-               normal(as_points(f0,points)),
-               normal(as_points(f1,points))))
-    180-angle;     
-
+     dihedral;     
+   
+    
 function dihedral_angle_faces(f0,f1,faces,points)=
-    let(angle = 
-           angle_between(
-               normal(as_points(faces[f0],points)),
-               normal(as_points(faces[f1],points))))
-    180-angle; 
-           
+    let(p0 = as_points(faces[f0],points),
+        p1 = as_points(faces[f1],points),
+        n0 = normal(p0),
+        n1 = normal(p1),
+        angle =  angle_between(n0,n1),
+        dot=(centre(p0)-centre(p1))*n1,
+        dihedral = dot < 0 ? 180-angle  : 180 +  angle  
+        )
+     dihedral; 
+
 //face functions
 function selected_face(face,fn) = 
      fn == [] || search(len(face),fn) != [] ;
@@ -699,14 +736,55 @@ module show_edges(edges,points,r=0.1) {
     for (edge = edges)
         show_edge(as_points(edge, points), r); 
 };
-        
+
+    
+variedcolors=["green","blue","red","yellow","teal",
+        ,"purple","orange",
+        "paleGreen","slateblue","greenyellow",    
+];
+
+compcolors= [[252,141,89],[255,255,191],[145,191,219]];
+twocolors= ["red","green"];
+ 
+module show_directed_edge(e,r=1) {
+     translate(e[0]) {
+         sphere(r*1.5);
+         translate((e[1]-e[0])*0.8) sphere(r);
+     }
+}
+
+module show_face(s,t=thickness,edge=false) {
+// render (convex) face by hulling spheres placed at the vertices
+    hull()
+    for (i=[0:len(s) -1])
+       translate(s[i]) sphere(t/2);     
+    if(edge) show_directed_edge([s[0],s[1]]);
+} 
+
+module show_faces(faces,t=thickness,edge=false,colors=["yellow"]) {
+   for (i=[0:len(faces)-1]) {
+      face=faces[i];
+      color(colors[i%len(colors)])
+      show_face(face,t=thickness,edge=edge);
+   }
+}
+ 
+module p_show_faces(obj,t=thickness,edge=false) {
+   pf=p_faces(obj);
+   pv=p_vertices(obj);
+   for (i=[0:len(pf)-1]) {
+      face=as_points(pf[i],pv);
+      color(colors[i%len(colors)])
+      show_face(face,t=thickness,edge=edge);
+   }
+}      
 module p_render(obj,show_vertices=false,show_edges=false,show_faces=true, rv=0.04, re=0.02) {
      if(show_faces) 
           polyhedron(p_vertices(obj),p_faces(obj),convexity=10);
      if(show_vertices) 
          show_points(p_vertices(obj),rv);
      if(show_edges)
-       show_edges(p_edges(obj),p_vertices(obj),re);
+         show_edges(p_edges(obj),p_vertices(obj),re);
 };
 
 module p_describe(obj){
@@ -715,10 +793,10 @@ module p_describe(obj){
 
 module p_print(obj) {
     p_describe(obj);
-    echo(" Vertices " ,p_vertices(obj));
-    echo(" Faces ", p_faces(obj));
+    echo("Vertices " ,p_vertices(obj));
+    echo("Faces ", p_faces(obj));
     edges=p_edges(obj);
-    echo(str(len(edges)," Edges ",edges));
+    echo(str(len(edges),"Edges ",edges));
     non_planar=p_non_planar_faces(obj);
     echo(str(len(non_planar)," faces are not planar", non_planar));
     debug=p_debug(obj);
@@ -1760,6 +1838,23 @@ module sky(z=200) {
    rotate([0,180,0]) ground(z);
 }
 
+// animation shaping
+function ramp(t,dwell) =
+// to shape the animation to give a dwell at begining and end
+   t < dwell 
+       ? 0
+       : t > 1 - dwell 
+         ? 1
+         :  ( t-dwell) /(1 - 2 * dwell);
+
+function updown(t,dwell) =
+    let(ramp=(1 - 2 * dwell)/2)
+    t < dwell ? 0 :
+        t < 0.5 ?( t-dwell)/ramp :
+           t < 0.5 +dwell ? 1 :
+              1 - (t - ramp - 2*dwell)/ramp;
+  
+
 /*
 //  superegg_tktI  - Goldberg (3,3)  
 function fmod(r,theta,phi) = fsuperegg(r,theta,phi,2.5,1.3333);
@@ -1821,31 +1916,7 @@ function identify_angles(vertices,faces,net)
   // compute the distinct dihedral angles 
   // augment the list of edges with the dihedral angle
 */ 
-
-// queue functions 
-function head(queue) = 
-           len(queue) > 0
-               ? queue[len(queue)-1]
-               : undef; 
-function enque(queue,item) = dflatten(concat(item,queue),1);         
-function deque(queue) =
- // remove the last entry in the queue
-    len(queue) > 1
-        ? [for (i=[0:len(queue)-2]) queue[i]]
-        : [];
-
-//sort a key value dictionary
-function quicksort_kv(kvs) = 
-//  kv[0] is the value to sort on,  kv[1] is the object sorted
- len(kvs)>0
-     ? let( 
-         pivot   = kvs[floor(len(kvs)/2)][0], 
-         lesser  = [ for (y = kvs) if (y[0]  < pivot) y ], 
-         equal   = [ for (y = kvs) if (y[0] == pivot) y ], 
-         greater = [ for (y = kvs) if (y[0]  > pivot) y ] )
-          concat( quicksort_kv(lesser), equal, quicksort_kv(greater))
-      : [];
-     
+   
 function face_index_with_edge(edge,faces) =   
         [for (i=[0:len(faces)-1]) 
          let (ei=index_of(edge,ordered_face_edges(faces[i])))
@@ -1865,23 +1936,24 @@ function adjacent_face_edges(i,faces,side)  =
         flatten([ei,opface_side])
       ] ;
 
-function make_fold(obj) =
+function p_create_net(obj) =
 // sort to get faces in nside order and start with largest
 // queue entries comprise [face,side]
      let (faces=p_faces(obj),
           points=p_vertices(obj),
-          start=head(quicksort_kv(
+          kv_faces = quicksort_kv(
                [for (i=[0:len(faces)-1])
-                     [len(faces[i]),i]
-               ]))[1], 
+                     [face_area(as_points(faces[i],points)),i]
+               ]), 
+          start = head(kv_faces)[1],
           queue= [[start,0]],  
           included = [start],
-          fold= []) 
-     make_foldx(faces,points,queue,included,fold);
+          net= []) 
+     create_net(faces,points,queue,included,net);
 
-function make_foldx(faces,points,queue,included,fold,i=0) =
+function create_net(faces,points,queue,included,net,i=0) =
      len(queue) == 0 
-          ? fold
+          ? net
           :  let(next=head(queue),
                  root=next[0],
                  side=next[1],
@@ -1899,12 +1971,12 @@ function make_foldx(faces,points,queue,included,fold,i=0) =
                  ? let (keyed_face_edges = 
                          [ for (i=[0:len(new_face_edges)-1])
                            let(fe=new_face_edges[i])
-                           [len(faces[fe[1]]),fe]],
+                           [face_area(as_points(faces[[fe[1]]],points)),fe]],
                        sorted_face_edges=
                            [ for (kfe=quicksort_kv(keyed_face_edges))
                              kfe[1]
                            ],                        
-                       adjacent_faces= 
+                        adjacent_faces= 
                             [for (fe = sorted_face_edges) fe[1]],
                         includedx = flatten(concat(included, adjacent_faces)),
                         queuex=enque(deque(queue), 
@@ -1915,9 +1987,9 @@ function make_foldx(faces,points,queue,included,fold,i=0) =
                                      angle=dihedral_angle_faces(root,adjacent_face,faces,points))
                                 flatten(concat(face_edge,angle))
                                ]]),
-                        foldx=concat(fold,[subtree]))
-                   make_foldx(faces,points,queuex,includedx,foldx,i+1)
-                :  make_foldx(faces,points,deque(queue),included,fold,i+1) ;
+                        netx=concat(net,[subtree]))
+                   create_net(faces,points,queuex,includedx,netx,i+1)
+                :  create_net(faces,points,deque(queue),included,net,i+1) ;
     
 function face_transform(face,m) =
      [ for (v = face) m_transform(v,m) ];
@@ -1934,42 +2006,40 @@ function line(edge) = edge[1]-edge[0];
    
 function place_face(a,base,base_side,face,face_side=0) =
 //  face is the face whose face_side is to be placed on the base_side of base at angle a
+//  face is on xy plane with side 0 along x axis
 //  note the face_side edge is reversed when placed on the matching base side
      let (base_normal= normal(base),
           base_edgev=face_edge(base,base_side),
           base_corner=base_edgev[0],
           face_edgev=face_edge(face,face_side), 
-          face_corner=face_edgev[1],
-          ma= m_translate(-face_corner),  // make edge[1] the origin
-          a_face = face_transform(face,ma),
           mb = m_rotate_to(base_normal),
-          b_face= face_transform(a_face,mb),  // rotate tri so plane is parallel to sq
+          b_face= face_transform(face,mb),  // rotate face so plane is parallel to base
           b_face_corner = face_edge(b_face,face_side)[1],
           offset = base_corner - b_face_corner,
           mc = m_translate(offset),      
-          c_face= face_transform(b_face,mc), // translate so tri-edge[1] coincides with sq_edge[0]
+          c_face= face_transform(b_face,mc), // translate so face-edge[1] coincides with base_edge[0]
           c_face_edgev= reverse(face_edge(c_face,face_side)),      
           line_face=line(c_face_edgev),
           line_base=line(base_edgev),
           angle = angle_between(line_face,line_base,base_normal),  // compute angle between edges
           md =  m_rotate_about_line(angle, base_corner, base_corner +base_normal), 
-          d_face= face_transform(c_face,md),  //rotate about sq_edge[0] normal to the plane of sq
+          d_face= face_transform(c_face,md),  //rotate about base_edge[0] normal to the plane of base
           e_face = rotate_about_edge(a,d_face,face_side) //rotate a degrees about this edge
           )
-      shift(e_face,shift=face_side);  // rote the shape so the edge is side 0
+      shift(e_face,shift=face_side);  // rotatee the sides so the edge is side 0
 
 // rendering  
    
-module fold_render(fold,faces,complete,edge=false) {
-    start=fold[0][0];
-    net_faces = dflatten(fold_renderx(fold,faces,complete,start));
-//    echo(net_faces);
+module p_net_render(t,net,complete,scale=10,edge=false,colors=["yellow"]) {
+    start=net[0][0];
+    faces = faces_to_origin(t,scale);    
+    net_faces = dflatten(net_render(net,faces,complete,start));
     mirror([0,0,1])
-      show_faces(net_faces,t=thickness,edge=edge);
+        show_faces(net_faces,t=thickness,edge=edge,colors=colors);
 }
  
-function fold_renderx(fold,faces,complete,root,current) =
-   let (tree= find(root,fold))
+function net_render(net,faces,complete,root,current) =
+   let (tree= find(root,net))
    tree == undef 
       ? []
       :
@@ -1991,121 +2061,68 @@ function fold_renderx(fold,faces,complete,root,current) =
                       face= faces[face_index] 
                       )
                   let (tface=place_face(angle,root_face,root_side,face,face_side))
-                  concat([tface],fold_renderx(fold,faces,complete,face_index,tface))
+                  concat([tface],net_render(net,faces,complete,face_index,tface))
                 ]
               : []   
            ); 
             
-function canonical_face(face,scale) =
+function face_to_origin(face,scale) =
    let(
-       fface= face_transform(face,m_scale([scale,scale,scale])), 
-       aface = face_transform(fface, m_rotate_from(normal(fface))),
-       bface=face_transform(aface,m_translate(-aface[1])),
-       next=0,
-       angle = atan2(bface[next][1],bface[next][0]),
-       m3=m_rotate([0,0,-angle]),
-       cface=face_transform(bface,m3)
+       aface= face_transform(face,m_scale([scale,scale,scale])), 
+       bface = face_transform(aface, m_rotate_from(normal(aface))),
+       cface=face_transform(bface,m_translate(-bface[1])),
+       angle = atan2(cface[0][1],cface[0][0]),    
+       dface=face_transform(cface,m_rotate([0,0,-angle]))
        )
-       cface;
+       dface;
      
-function canonical_faces(obj,scale,base) =
+function faces_to_origin(obj,scale) =
+// place face with vertex 1 at the origin, vertex 0 alomg the x axis
+// and in the XY plane
     let(faces=p_faces(obj), vertices=p_vertices(obj))
     [for (i=[0:len(faces)-1])
        let(face=faces[i])
        let (points = as_points(face,vertices))
-       canonical_face(points,scale,flipit=i!=base)
+       face_to_origin(points,scale)
     ];
-
-//  rendering nets 
-    
-colors=["green","blue","red","yellow","teal",
-        ,"purple","orange",
-        "paleGreen","slateblue","greenyellow",    
-];
-
-compcolors= [[252,141,89],[255,255,191],[145,191,219]];
-twocolors= ["red","green"];
- 
-module show_edge(e,r=1) {
-     translate(e[0]) {
-         sphere(r*1.5);
-         translate((e[1]-e[0])*0.8) sphere(r);
-     }
-}
-
-module show_face(s,t=thickness,edge=false) {
-// render (convex) face by hulling spheres placed at the vertices
-    hull()
-    for (i=[0:len(s) -1])
-       translate(s[i]) sphere(t/2);     
-    if(edge) show_edge([s[0],s[1]]);
-} 
-
-module show_faces(faces,t=thickness,edge=false) {
-   for (i=[0:len(faces)-1]) {
-      face=faces[i];
-       color(colors[i%len(colors)])
-//      color(compcolors[len(face)-3]/256)
-      color(twocolors[len(face)-5])
-      show_face(face,t=thickness,edge=edge);
-   }
-}
- 
-module show_poly_faces(obj,t=thickness,edge=false) {
-   pf=p_faces(obj);
-   pv=p_vertices(obj);
-   for (i=[0:len(pf)-1]) {
-      face=as_points(pf[i],pv);
-      color(colors[i%len(colors)])
-      show_face(face,t=thickness,edge=edge);
-   }
-}
-function ramp(t,dwell) =
-// to shape the animation to give a dwell at begining and end
-   t < dwell 
-       ? 0
-       : t > 1 - dwell 
-         ? 1
-         :  ( t-dwell) /(1 - 2 * dwell);
-
-function updown(t,dwell) =
-    let(ramp=(1 - 2 * dwell)/2)
-    t < dwell ? 0 :
-        t < 0.5 ?( t-dwell)/ramp :
-           t < 0.5 +dwell ? 1 :
-              1 - (t - ramp - 2*dwell)/ramp;
-  
 
 // t=plane(join(D()),20);
 // t=canon(plane(snub(C()),20),20);
-// t=place(kis(T(),height=0.4));
 // t=place(O());
 // t=trunc(T());
 // t=place(A(3,0.5));
 // t = plane(kis(T()));
 // t=C();
 // t=orient(rhombic_enneacontahedron() );
-t= plane(expand(D()));
+// t= plane(expand(D()));
 // t=canon(plane(join(plane(trunc(I()))),20),20);
 // t=canon(plane(trunc(I())));
 // t=D();
 // t=chamfer(C(),0.3);
 // t=random(T(),1.0);
 // echo(t);
-///p_print(t);
-//translate([0,0,30]) scale(5) p_render(t);
+// translate([0,0,30]) scale(5) p_render(t);
+// t = canon(plane(snub(D())),30);
+// t=StewartsG3();
+// t=kis(O(),1.15);
 
+// t=D();
+
+t=random(kis(C(),-0.2),0.3);
+
+p_describe(t);
+echo(p_dihedral_angles(t));
 $fn=5;
-thickness=0.2;
+thickness=0.1;
 length=10;
               
-$t=1;
-complete=ramp($t,0.05); 
+$t=0.3;
+complete=updown($t,0.05); 
     
-f = make_fold(t);
-
-echo("fold", f);
-n = canonical_faces(t,10,base=f[0][0]);    
-
-fold_render(f,n,complete);
+net = p_create_net(t);
+echo("net", net);
+// p_net_render(t,net,complete);
+p_net_render(t,net,0,colors=variedcolors);
+p_net_render(t,net,1,colors=["gray"]);
+// translate ([20,0,0]) scale(10) p_render(place(t));
 
