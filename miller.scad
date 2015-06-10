@@ -1,6 +1,8 @@
 /*
   crystal solids via Miller indices 
   
+   see http://kitwallace.tumblr.com/tagged/crystal 
+   
    Kit Wallace June 2015
    
 */
@@ -70,7 +72,6 @@ module facet(normal, d=1, size=20) {
 } 
 
 module form(facets,size=1,color="green") {
-// Scan through the crystal facets (with the unit plane normals in cartesian coords)
  color(color)
     difference() {
      cube(20,center=true);
@@ -82,31 +83,13 @@ module form(facets,size=1,color="green") {
 
 cube = full_symmetry([0,0,1]);
 octa = full_symmetry([1,1,1]);  // octahedron
-th= full_symmetry([0,1,2]);  // tetrakis hexahedron
-rd= full_symmetry([0,1,1]);  // rhombic dodecahedron
-di= full_symmetry([1,1,2]);
-dd =full_symmetry([1,2,3]);  // dysdakis dodecahedron
-
-
+th= full_symmetry([0,1,2]);     // tetrakis hexahedron
+rd= full_symmetry([0,1,1]);     // rhombic dodecahedron
+di= full_symmetry([1,1,2]);     // deltoid icosatetrahedron
+dd =full_symmetry([1,2,3]);     // dysdakis dodecahedron
 
 tp1 = [[1,1,0],[1,-1,0],[-1,1,0],[-1,-1,0]]; 
 tp2= [[1,0,0],[0,1,0],[-1,0,0],[0,-1,0]];
-
-// form {00k}  is a cube
-// tetrakis hexahedron has form {0hk}  so any values of h and k make ths shape
-// form {01k}  is
-//       k = 0  cube
-//       k < 1  tetrakis hexahedron
-//       k = 1  rhombic dodecahedron
-//       k > 1  tetrakis hexahedron
-//form {11k} 
-// where  
-//         k = 0 rhombic dodecahedron
-//         k < 1 tetrakis ocatahedron
-//         k = 1 octahedron
-//         k > 1 deltoid icosatetrahedron
-// form {jkl} where jkl all different = dysdakis dodecahedron
-
 
 k=2*$t;
 
