@@ -132,7 +132,7 @@ module zircon () {
   }
 }
 
-module garnet(x,k) {
+module garnet(d_di,d_rd) {
   intersection () {
     solid(di,d=d_di,color="red");
     solid(rd,d=d_rd,color="green");
@@ -157,6 +157,7 @@ module r_rd(d_rd) {
 module r_th(d_rh) {
     solid(rd,d=d_th);  
 }
+
 module tetrahedrite(d_tetra=1,d_th) {
   intersection() {    
     solid(tetra2,d=d_tetra,color="red");
