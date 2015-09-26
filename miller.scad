@@ -17,7 +17,7 @@
       hex cones for corundum
       
 */
-tau = (1 + sqrt(5))/2;
+phi = (1 + sqrt(5))/2;
   
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
 
@@ -143,7 +143,7 @@ tetrahedron_l = half_symmetry([1,1,1],false);
 pyritohedron = alternate_symmetry([0,1,2]);
 dodecahedron = alternate_symmetry([0,1,tau]);
 diakis_dodecahedron = alternate_symmetry([1,2,3]);
-icosahedron = concat(full_symmetry([1,1,1]),alternate_symmetry([0,tau,1/tau]));
+icosahedron = concat(full_symmetry([1,1,1]),alternate_symmetry([0,phi,1/phi]));
 
 // crystals 
 
