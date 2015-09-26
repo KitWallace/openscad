@@ -8,14 +8,17 @@
    done 
       redone the face rendering
       distinct over a whole form
-      new minerals added
       random forms
+      alternate_symmetry
+      parity_symmetry
+      more crystals
       
    todo 
       hex cones for corundum
       
 */
-
+tau = (1 + sqrt(5))/2;
+  
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
 
 function vcontains(val,list) =
@@ -44,7 +47,7 @@ module face(normal, d=1, size=20) {
             cube([10*size,10*size,size],center=true);
 } 
 
-module solid(faces,d=1,color="lightblue",size=20) {
+module solid(faces,d=1,color="lightblue",size=40) {
  /* faces is a list of normals (Miller indices)
     d is either a scaler, the distance of each face from the origin or a list of distances, one for each face
  */  
@@ -52,8 +55,9 @@ module solid(faces,d=1,color="lightblue",size=20) {
     difference() {
      sphere(size,center=true);
      for(i = [0:len(faces)-1])  {
+       face = faces[i];
        fd = len(d) == undef ? d : d[i];
-       face(faces[i],d=fd,size=size);
+       face(face,d=fd,size=size);
      }
  }
 }
@@ -79,6 +83,12 @@ function combs(list,n=0) =
      ]
    : list[n] ;
 
+function rotate(face) =
+    [face[1],face[2],face[0]];
+       
+function cycle(face) =
+    [face,rotate(face),rotate(rotate(face))];
+       
 function expand(list) =   
 // needs a better name
   [for (x= list)
@@ -93,95 +103,155 @@ function full_symmetry(list) =
   distinct(flatten([for (comb = combs(expand(list)))
       perm3(comb)
   ]));
+  
+function alternate_symmetry(list) =
+   distinct(flatten([for (face = cycle(list)) combs(expand(face))]));
+       
+function sum(list,i=0) =  
+      i < len(list)
+        ?  (list[i] + sum(list,i+1))
+        :  0;
 
+function parity(face) =
+    let(parity = sum( [for (i=face) i > 0 ? 1 : 0]))
+    parity % 2 == 0 ;
+ 
+function half_symmetry(list,even=true) =
+    let(fs=full_symmetry(list))
+    [for (i=fs) if (parity(i) == even ) i]; 
 
-//  forms - not complete yet
-function pinacoid(face) =  [ face,opposite(face)];
+function pinacoid(face) =  [ face,opposite(face)];   
+//  forms 
 
 cube = full_symmetry([0,0,1]);
-octa = full_symmetry([1,1,1]);  // octahedron
-th= full_symmetry([0,1,2]);     // tetrakis hexahedron, tetrahexahedron(cy)
-rd= full_symmetry([0,1,1]);     // rhombic dodecahedron
-di= full_symmetry([1,1,2]);     // deltoid icosatetrahedron, trapezahedron (cy),  tetragon-trioctahedron(cy)
-dd =full_symmetry([1,2,3]);     // dysdakis dodecahedron, 
+octahedron = full_symmetry([1,1,1]);  
+hexatetrahedron= full_symmetry([0,1,2]);  
+rhombic_dodecahedron= full_symmetry([0,1,1]);   
+deltoid_icosahedron= full_symmetry([1,1,2]); 
+dysdakis_dodecahedron =full_symmetry([1,2,3]); 
 
-tp1 = [[1,1,0],[1,-1,0],[-1,1,0],[-1,-1,0]];   // tetrahedral prism 
-tp2= [[1,0,0],[0,1,0],[-1,0,0],[0,-1,0]];      // tetrahedral prism
+tetrahedral_prism_1 = [[1,1,0],[1,-1,0],[-1,1,0],[-1,-1,0]];   
+tetrahedral_prism_2= [[1,0,0],[0,1,0],[-1,0,0],[0,-1,0]];    
 function ty1(k=1) =[[1,1,k],[1,-1,k],[-1,1,k],[-1,-1,k]];   // tetrahedral prism 
 function ty2(k=1) =[[1,0,k],[0,1,k],[-1,0,k],[0,-1,k]];     // tetrahedral pyramid
 function hy(k=1) =concat(ty1(k),ty2(k/1.414));              // octagonal pyramid
-tetra1=  [[1, 1, 1], [-1, -1, 1] ,[1, -1, -1], [-1, 1, -1]];  // tetrahedron - orientation 1
-tetra2=  [[1, 1, -1], [1, -1, 1], [-1, 1, 1],  [-1, -1, -1]];  // tetrahedron - orientation 2
-k=tan(60);
-hex = [[k,1,0],[0,1,0],[-k,1,0],[-k,-1,0],[0,-1,0],[k,-1,0]];
+function hex_prism(k=tan(60)) = [[k,1,0],[0,1,0],[-k,1,0],[-k,-1,0],[0,-1,0],[k,-1,0]];
+    
+tetrahedron_r = half_symmetry([1,1,1],true);
+tetrahedron_l = half_symmetry([1,1,1],false);
+
+pyritohedron = alternate_symmetry([0,1,2]);
+dodecahedron = alternate_symmetry([0,1,tau]);
+diakis_dodecahedron = alternate_symmetry([1,2,3]);
+icosahedron = concat(full_symmetry([1,1,1]),alternate_symmetry([0,tau,1/tau]));
 
 // crystals 
 
-module fluorite(d_cube,d_dd) {
+module fluorite_1(d_cube,d_dd) {
   intersection () {
-      solid(cube,d_cube,"red");    //octahedron
-      solid(dd,d_dd,"green");   // disdyakis dodecahedron
+      solid(cube,d_cube,"red");    
+      solid(dysdakis_dodecahedron,d_dd,"green");   
   }
 }
 
 module zircon () {
   intersection(){
-     solid(tp1,color="red");
-     scale([1,1,3]) solid(octa,color="green");
-     scale(1.5) solid(octa,color="blue");
+     solid(tetrahedral_prism_1,color="red");
+     scale([1,1,3]) solid(octahedron,color="green");
+     scale(1.5) solid(octahedron,color="blue");
   }
 }
 
 module garnet(d_di,d_rd) {
   intersection () {
-    solid(di,d=d_di,color="red");
-    solid(rd,d=d_rd,color="green");
+    solid(deltoid_icosahedron,d=d_di,color="red");
+    solid(dysdakis_dodecahedron,d=d_rd,color="green");
   }     
 }
 
 module random_cube_octahedron(d_cube,d_octa) {
    intersection() {
      solid (cube,d=d_cube,color="green");
-     solid (octa,d=d_octa,color="red") ;
+     solid (octahedron,d=d_octa,color="red") ;
    }
 }
 
-module r_octa(d_octa) {
-    solid(octa,d=d_octa);  
+module r_octahedron(d_octa) {
+    solid(octahedron,d=d_octa);  
 }
 
-module r_rd(d_rd) {
-    solid(rd,d=d_rd);  
+module r_rhombic_dodecahedron(d_rd) {
+    solid(rhombic_dodecahedron,d=d_rd);  
 }
 
-module r_th(d_rh) {
-    solid(rd,d=d_th);  
-}
 
-module tetrahedrite(d_tetra=1,d_th) {
+// sample crystals
+module sphalerite(d_tetra1=1,d_tetra2=0.8) {
   intersection() {    
-    solid(tetra2,d=d_tetra,color="red");
-    solid(th,d=d_th,color="green");
+    solid(tetrahedron_l,d_tetra1,color="red");
+    solid(tetrahedron_r,d=d_tetra2,color="green");
   }
 }
 
-module sphalerite(d_tetra1,d_tetra2) {
-  intersection() {    
-    solid(tetra1,d_tetra1,color="red");
-    solid(tetra2,d=d_tetra2,color="green");
-  }
-}
-
-module boracite(d_cube,d_rd,d_tetra2) {
+module boracite(d_cube=0.8,d_rd=1,d_tetra2=1) {
   intersection() {    
     solid(cube,d=d_cube,color="green");
-    solid(rd,d=d_rd,color="red");
-    solid(tetra2,d=d_tetra2,color="orange");
+    solid(rhombic_dodecahedron,d=d_rd,color="red");
+    solid(tetrahedron_r,d=d_tetra2,color="orange");
   }
 }
 
-// main
+module tetrahedrite() {
+  intersection() {
+    solid(half_symmetry([3,3,2]),1.03,"red");
+    solid(full_symmetry([3,1,0]),1.2841,"green");
+    solid(half_symmetry([2,1,1]),1,"pink");  
+          // positive tetrakis tetrahedron
+    solid(half_symmetry([2,1,1],false),1.535,"white");
+          // negative tetrakis tetrahedron
+    solid(half_symmetry([1,1,1]),1,"orange");  
+          // positive tetrahedron
+    solid(full_symmetry([1,1,0]),1.37,"blue");
+    solid(full_symmetry([1,0,0]),1.09,"silver");  
+  }   
+}
 
-d_tetra1=1;
-d_tetra2=rands(0.8,1.2,4);
-scale(20) sphalerite(d_tetra1,d_tetra2);
+module garnet() {
+  intersection() {
+    solid(full_symmetry([3,2,1]),1.04,"red");
+    solid(full_symmetry([2,1,1]),1,"green");
+    solid(full_symmetry([1,1,0]),1.047,"blue");
+   }   
+}
+
+module fluorite_2() {
+// http://www.smorf.nl/index.php?crystal=Fluorite_066
+  intersection() {
+    solid(full_symmetry([2,2,1]),1,"red");
+    solid(full_symmetry([1,1,1]),1,"green");
+    solid(full_symmetry([1,1,0]),0.97,"blue");
+   }   
+}
+
+module galena() {
+// http://www.smorf.nl/index.php?crystal=Galena_023 
+   intersection () {
+      solid(full_symmetry([2,2,1]),1,"red");
+      solid(full_symmetry([1,0,0]),1.02,"green");
+   } 
+    
+}
+
+module pyrite_008() {
+   intersection () {
+      solid(alternate_symmetry([2,1,0]),1,"red");
+      solid(full_symmetry([1,1,1]),0.76,"green");
+   }   
+}
+
+// h=$t*2; echo (h);
+// color([236, 170, 136]/256) scale(20) solid(alternate_symmetry([0,1,h]));
+
+//echo(pyritohedron);
+
+scale(20) boracite();
