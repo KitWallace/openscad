@@ -16,6 +16,7 @@
       get right/left or positive/negative terminology right 
 */
 
+
 // some constants
 PHI = (1 + sqrt(5))/2;
 
@@ -151,7 +152,13 @@ function order_filter(faces,form) =
     [for (face=faces) 
         if (same_order(unsigned(form),unsigned(face))) face
     ];
-        
+
+function hemi_filter(faces,axis,form) =
+     let(asign=sign(form[axis]))
+     [for (face=faces) 
+          if(sign(face[abs(axis)])==asign) face
+     ];
+          
 // face construction      
 function filter_faces(form,faces,modifiers,i=0) =
     i < len(modifiers)
@@ -161,6 +168,8 @@ function filter_faces(form,faces,modifiers,i=0) =
              ? order_filter(faces,form)
              : filter=="parity" 
              ? parity_filter(faces,form)
+             : filter=="hemiz"
+             ? hemi_filter(faces,2,form)
              : faces)
          filter_faces(form,filtered_faces,modifiers,i+1)
        : faces;
@@ -177,9 +186,9 @@ function form_faces(form,base,modifiers) =
        ? trapezohedral_symmetry(form)
        : base=="mirror"
        ? mirror(form)
-       :  base=="pedion"
-       ? form
-       : form)
+       : base=="pedion"
+       ? [form]
+       : [form])
      let(faces = filter_faces(form,base_faces,modifiers) )
      faces;
 
@@ -204,7 +213,8 @@ module c_render_part(crystal,k,pert=0) {
          name = form_spec[4] == undef ? "" :   form_spec[4];     
          color = COLORS[k]== undef ? "green" : COLORS[k];
          faces=form_faces(form,base,modifiers);  
-         echo(name,color,form,d+pert*rands(0,1,1)[0],base,modifiers, len(faces));
+         echo(form_spec);
+         echo(name,color,form,d+pert*rands(0,1,1)[0],base,modifiers, len(faces),faces);
          solid(faces,d,COLORS[k]);      
       }  
 }
@@ -235,14 +245,14 @@ cubic_system = [
       [[2,2,1],1,"",[],"triakisoctahedron : hhl h > l "],
       [[2,2,1],1,"",["parity"],"deltoid dodecahedron :right"],
       [[2,-2,1],1,"",["parity"],"deltoid dodecahedron : left"],
-      [[3,2,1],1,"",[],"hexoctahedron"],
+      [[3,2,1],1,"",[],"hexakis octahedron"],
       [[3,2,1],1,"",["order"],"diakisdodecahedron : right"],
       [[3,1,2],1,"",["order"],"diakisdodecahedron : left"],
       [[3,2,1],1,"",["parity"], "hexatetrahedron : right"],
       [[3,-2,1],1,"",["parity"], "hexatetrahedron : left"],
       [[3,2,1],1,"gyroid",[], "pentagonal icositetrahedron - actually 4 enantiomorphs"],
-      [[3,2,1],1,"",["parity,order"],"tetrahedral pentagonal dodecaheron: right"],
-      [[2,-3,1],1,"",["parity,order"],"tetrahedral pentagonal dodecaheron : left"]
+      [[3,2,1],1,"",["parity","order"],"tetrahedral pentagonal dodecaheron: right"],
+      [[2,-3,1],1,"",["parity","order"],"tetrahedral pentagonal dodecaheron : left"]
     ]
 ];
 
@@ -578,12 +588,66 @@ class_4mm = [
       [[0,0,1],1,"pedion"],  // pedion
       [[0,0,-1],1,"pedion"],  //pedion
       [[2,1,0],1], // Ditetragonal prism {hk0]
-      [[2,0,1],1],  // tetragonal bipyramid first order
-      [[2,2,1],1,"",["parity"]],  // tetragonal sphenoid
-      [[3,2,1],1,"",["parity"]]   // tetragonal scalenohedron, ditetragonal bisphenoid
+      [[2,0,1],1,"",["hemiz"]],   // tetragonal pyramid
+      [[2,0,-1],1,"",["hemiz"]],  // tetragonal pyramid
+      [[2,2,1],1,"",["hemiz"]],   // tetragonal pyramid
+      [[2,2,-1],1,"",["hemiz"]],  // tetragonal pyramid
+      [[3,2,1],1,"",["hemiz"]],   // tetragonal scalenohedron, ditetragonal bisphenoid
+      [[3,2,-1],1,"",["hemiz"]]   // tetragonal scalenohedron, ditetragonal 
     ]
     ];
 
-//scale(20)  c_render(chalcopyrite_037);
-//scale(20) c_animate(cubic_system);
-scale(20) c_render_part(class_422,6);
+diabolite =[
+// Bishop fig 76 p 117
+    ["diabolite",[1,1,1],"tetra","4mm"],
+    [
+      [[1,0,0],1],
+      [[1,1,1],1,"",["hemiz"]],
+      [[1,1,2],1,"",["hemiz"]],  
+      [[1,1,2],1,"",["hemiz"]], 
+      [[1,0,1],1,"",["hemiz"]], 
+      [[2,0,1],1,"",["hemiz"]], 
+      [[1,0,-1],1,"",["hemiz"]], 
+      [[2,0,-1],1,"",["hemiz"]], 
+      [[0,0,1],1,"pedion"],
+      [[0,0,-1],1,"pedion"]
+    ]
+    ];
+    
+class_4m = [
+// ditetragonal pyramidal
+    ["class_4/m",[1,1,0.5],"tetra","4/m"],
+    [
+      [[1,0,0],1],  //tetragonal prism
+      [[1,1,0],1],   //tetragonal prism 
+      [[2,1,0],1],   //tetragonal prism 
+      [[0,0,1],1,"mirror"],  // pedion
+      [[2,0,1],1],  // tetragonal bipyramid 
+      [[3,3,1],1],  // tetragonal bipyramid 
+      [[1,2,3],1,,"",["order"]]   // tetragonal bipyramid
+
+    ]
+    ];
+
+scapolite = [
+// not correct
+// http://www.smorf.nl/index.php?crystal=Scapolite_32
+    ["class_4/m",[1,1,0.63],"tetra","4/m"],
+    [
+      [[1,0,0],1.01],  //tetragonal prism
+      [[1,0,1],2.02],   //tetragonal prism 
+      [[1,1,0],0.95],   //tetragonal prism 
+      [[2,-1,1],1.6,"",["order"]],   // tetragonal bipyramid
+      [[2,1,1.01],1.44,"",["order"]],   // tetragonal bipyramid
+      [[3,0,1],1.41,"",["order"]],   // tetragonal bipyramid
+      [[3,1,0],1.03,"",["order"]],   // tetragonal bipyramid
+
+    ]
+    ];
+
+  
+
+//scale(20)  c_render(tetrahedrite);
+// scale(20) c_render(scapolite);
+ scale(20) c_render_part(cubic_system,4);
+// scale(20)  c_animate(cubic_system);
