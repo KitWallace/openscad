@@ -9,6 +9,8 @@ Code licensed under the Creative Commons - Attribution - Share Alike license.
 
 The project is being documented in my blog 
    http://kitwallace.tumblr.com/tagged/conway
+   
+OpenSCAD version 2015-03-01 or later
 
 Done :
     poly object constructor 
@@ -34,10 +36,11 @@ Done :
        chamfer(obj,ratio)
        whirl(obj,ratio)
        tt(obj)   convert triangular faces into 4 triangles
+       quad(obj,height)  quads formed by midpoints, centre and vertices
        
    additional operators
        transform(obj,matrix)    matrix transformation of vertices
-       insetkis(obj,ratio,height,fn)
+       inset_kis(obj,ratio,height,fn)
        modulate(obj)  with global spherical function fmod()
        shell(obj,outer_inset_ratio,inner_inset_ratio,
             ,outer_inset,inner_inset,height,min_edge_length)
@@ -54,10 +57,16 @@ Done :
     canonicalization
        plane(obj,itr) - planarization using reciprocals of centres
        canon(obj,itr) - canonicalization using edge tangents
-          
+    
+    rendering
+      p_render(obj,...)
+      p_hull(obj,r)
+      p_render_text(obj,texts...)
+      
+      
 to do
        canon still fails if face is extreme - use plane first
-       last updated 22 March 2015 10:00
+       last updated 3 October 2015 10:00
  
 requires version of OpenSCAD  with concat, list comprehension and let()
 
@@ -191,6 +200,7 @@ function I() =
 
 
 function Y(n,h=1) =
+// pyramids
    p_resize(poly(name= str("Y",n) ,
       vertices=
       concat(
@@ -208,6 +218,7 @@ function Y(n,h=1) =
      ));
 
 function P(n,h=1) =
+// prisms
    p_resize(poly(name=str("P",n) ,
       vertices=concat(
         [for (i=[0:n-1])
@@ -227,6 +238,7 @@ function P(n,h=1) =
      ));
         
 function A(n,h=1) =
+// antiprisms
    p_resize(poly(name=str("A",n) ,
       vertices=concat(
         [for (i=[0:n-1])
@@ -251,11 +263,23 @@ function A(n,h=1) =
 
 // basic list comprehension functions
 
+function depth(a) =
+   len(a)== undef 
+       ? 0
+       : 1+depth(a[0]);
+        
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
+
+function dflatten(l,d=2) =
+// hack to flattened mixed list and list of lists
+   flatten([for (a = l) depth(a) > d ? dflatten(a, d) : [a]]);
     
 function reverse(l) = 
      [for (i=[1:len(l)]) l[len(l)-i]];
-   
+
+function shift(l,shift=0) = 
+     [for (i=[0:len(l)-1]) l[(i + len(l)- shift)%len(l)]];  
+         
 //  functions for creating the matrices for transforming a single point
 
 function m_translate(v) = [ [1, 0, 0, 0],
@@ -284,6 +308,14 @@ function m_rotate(v) =  [ [1,  0,         0,        0],
 function vec3(v) = [v.x, v.y, v.z];
 function m_transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
 
+function m_rotate_to(normal) = 
+      m_rotate([0, atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]) 
+    * m_rotate([0, 0, atan2(normal.y, normal.x)]);  
+    
+function m_rotate_from(normal) = 
+      m_rotate([0, 0, -atan2(normal.y, normal.x)]) 
+    * m_rotate([0, -atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]);  
+    
 function m_to(centre,normal) = 
       m_rotate([0, atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]) 
     * m_rotate([0, 0, atan2(normal.y, normal.x)]) 
@@ -294,6 +326,10 @@ function m_from(centre,normal) =
     * m_rotate([0, 0, -atan2(normal.y, normal.x)]) 
     * m_rotate([0, -atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]); 
 
+
+function m_rotate_about_line(a,v1,v2) =
+      m_from(v1,v2-v1)*m_rotate([0,0,a])*m_to(v1,v2-v1);
+      
 // modules to orient objects for rendering
 module orient_to(centre, normal) {   
       translate(centre)
@@ -305,7 +341,18 @@ module orient_to(centre, normal) {
 // vector functions
 function unitv(v)=  v/ norm(v);
 
-function angle_between(u, v) = acos( (u * v) / (norm(u) * norm(v))); 
+function signx (x) =
+     x==0 ? 1 : sign(x);
+     
+function angle_between(u, v, normal) = 
+// protection against inaccurate computation
+     let (x= unitv(u) * unitv(v))
+     let (y = x <= -1 ? -1 :x >= 1 ? 1 : x)
+     let (a = acos(y))
+     normal == undef
+        ? a 
+        : signx(normal * cross(u,v)) * a;
+     
 function vadd(points,v,i=0) =
       i < len(points)
         ?  concat([points[i] + v], vadd(points,v,i+1))
@@ -328,9 +375,15 @@ function ssum(list,i=0) =
 function vcontains(val,list) =
      search([val],list)[0] != [];
    
-function index_of(val, list) =
-      search([val],list)[0]  ;
-       
+function index_of(key, list) =
+      search([key],list)[0]  ;
+
+function value_of(key, list) =
+      list[search([key],list)[0]][1]  ;
+
+// dictionary shorthand assuming present
+function find(key,array) =  array[search([key],array)[0]];
+  
 function count(val, list) =  // number of occurances of val in list
    ssum([for(v= list) v== val ? 1 :0]);
     
@@ -390,12 +443,7 @@ function ordered_vertex_edges(v,vfaces,face,k=0)  =
            : []
 ;     
      
-function face_with_edge(edge,faces) =
-     flatten(
-        [for (f = faces) 
-           if (vcontains(edge,ordered_face_edges(f)))
-            f
-        ]);
+
                    
 // edge functions
           
@@ -434,19 +482,46 @@ function check_euler(obj) =
      //  E = V + F -2    
     len(p_vertices(obj)) + len(p_faces(obj)) - 2
            ==  len(distinct_edges(obj[2]));
-         
+
+function edge_length(edge,points) =    
+    let (points = as_points(edge,points))
+    norm(points[0]-points[1]) ;
+             
 function edge_lengths(edges,points) =
- [ for (edge = edges) 
-   let (points = as_points(edge,points))
-        norm(points[0]-points[1])
- ];
+   [ for (edge = edges) 
+     edge_length(edge,points)
+   ];
  
 function tangent(v1,v2) =
    let (d=v2-v1)
-   v1 - v2 * (d*v1)/norm2(d);
+   v1 - d * (d*v1)/(d*d);
  
-function edge_distance(v1,v2) = sqrt(norm2(tangent(v1,v2)));
+function edge_distance(v1,v2) = norm(tangent(v1,v2));
  
+function face_with_edge(edge,faces) =
+     flatten(
+        [for (f = faces) 
+           if (vcontains(edge,ordered_face_edges(f)))
+            f
+        ]);
+           
+function dihedral_angle(edge,faces,points)=
+    let(f0 = face_with_edge(edge,faces),
+        f1 = face_with_edge(reverse(edge),faces)
+        )
+    let(angle = 
+           angle_between(
+               normal(as_points(f0,points)),
+               normal(as_points(f1,points))))
+    180-angle;     
+
+function dihedral_angle_faces(f0,f1,faces,points)=
+    let(angle = 
+           angle_between(
+               normal(as_points(faces[f0],points)),
+               normal(as_points(faces[f1],points))))
+    180-angle; 
+           
 //face functions
 function selected_face(face,fn) = 
      fn == [] || search(len(face),fn) != [] ;
@@ -518,14 +593,17 @@ function face_coplanarity(face) =
                   cross(face[2]-face[1],face[3]-face[2])
             ));
 
+
+function face_edges(face,points) =
+     [for (edge=ordered_face_edges(face)) 
+           edge_length(edge,points)
+     ];
+         
 function min_edge_length(face,points) =
-    let (edges=ordered_face_edges(face))
-    let (lengths=edge_lengths(edges,points))
-    min(lengths);
+    min(face_edges(face,points));
    
 function face_irregularity(face,points) =
-    let (edges=ordered_face_edges(face))
-    let (lengths=edge_lengths(edges,points))
+    let (lengths=face_edges(face,points))
     max(lengths)/ min(lengths);
 
 function face_analysis(faces) =
@@ -592,7 +670,11 @@ function p_non_planar_faces(obj,tolerance=0.001) =
              if (error>tolerance) 
                  [tolerance,face]
      ];
-             
+
+function p_dihedral_angles(obj) =
+     [for (edge=p_edges(obj))
+         dihedral_angle(edge, p_faces(obj),p_vertices(obj))
+     ];     
 function p_irregular_faces(obj,tolerance=0.01) =
      [for (face = p_faces(obj))
          let(ir=face_irregularity(face,p_vertices(obj)))
@@ -636,6 +718,14 @@ module p_render(obj,show_vertices=false,show_edges=false,show_faces=true, rv=0.0
        show_edges(p_edges(obj),p_vertices(obj),re);
 };
 
+
+module p_hull(obj,r=0.01){
+  hull() {
+      for (p=p_vertices(obj))
+          translate(p) sphere(r);
+      
+  }
+  };  
 module p_describe(obj){
     echo(p_description(obj));
 }
@@ -711,10 +801,10 @@ function rdual(obj) =
 function plane(obj,n=5) = 
     n > 0 
        ? plane(rdual(rdual(obj)),n-1)   
-       : poly(name=str("P",p_name(obj)),
-              vertices=resize_points(p_vertices(obj)),
+       : p_resize(poly(name=str("P",p_name(obj)),
+              vertices=p_vertices(obj),
               faces=p_faces(obj)
-             );
+             ));
 
 function ndual(obj) =
       let(np=p_vertices(obj))
@@ -735,10 +825,10 @@ function ndual(obj) =
 function canon(obj,n=5) = 
     n > 0 
        ? canon(ndual(ndual(obj)),n-1)   
-       : poly(name=str("K",p_name(obj)),
-              vertices=resize_points(p_vertices(obj)),
+       : p_resize(poly(name=str("K",p_name(obj)),
+              vertices=p_vertices(obj),
               faces=p_faces(obj)
-             );   
+             ));   
              
 function dual(obj) =
     poly(name=str("d",p_name(obj)),
@@ -883,6 +973,45 @@ function meta(obj,height=0.1) =
       )   
                
      poly(name=str("m",p_name(obj)),
+          vertices= concat(pv,vertex_values(newv)),                
+          faces=newf
+      ) 
+ ; //end meta
+
+function quad(obj,height=0.1) =
+// each face is replaced with n quadralaterals based on edge midpoints vertices and centre
+    let(pe=p_edges(obj),
+        pf=p_faces(obj),
+        pv=p_vertices(obj))
+    let (newv =concat(
+           [for (face = pf)               // new centre vertices
+            let (fp=as_points(face,pv))
+             [face,centre(fp) + normal(fp)*height]                                
+           ],
+           [for (edge=pe)
+            let (ep = as_points(edge,pv))
+            [edge,(ep[0]+ep[1])/2]
+           ]))
+     let(newids=vertex_ids(newv,len(pv)))
+          
+     let(newf =
+          flatten(
+          [for (face=pf) 
+             let(centre=vertex(face,newids))  
+             flatten(
+              [for (j=[0:len(face)-1])    //  
+               let (a=face[j],
+                    b=face[(j+1)%len(face)],
+                    c=face[(j+2)%len(face)],
+                    mid1=vertex(distinct_edge([a,b]),newids),
+                    mid2=vertex(distinct_edge([b,c]),newids)
+           
+              )
+                 [ [ mid1, centre, mid2,b] ]
+              ])
+           ]))   
+               
+     poly(name=str("q",p_name(obj)),
           vertices= concat(pv,vertex_values(newv)),                
           faces=newf
       ) 
@@ -1611,7 +1740,41 @@ function shell(obj,outer_inset_ratio=0.2, outer_inset, inner_inset_ratio, inner_
        debug=newv       
        )
 ; // end shell  
-                           
+
+module p_render_text(s,texts,font,depth,offset,size) {
+    
+/*
+    s is a polyhedron created as a conway seed or chain of operation
+    texts is an array of strings to be placed on the faces of s
+    fint is the definition of the fint used by text()
+    depth is the depth of the incised text
+    offset is the offset of the strings to control the horizontal alignment
+    size is the size of the text - because the defualt solid is about 1 mm in 
+        size, and the default font size is 10, this needs to be quite small.
+    
+   e.g. 
+    scale(20) p_render_text(place(O()),["1","2","3","4","5","6","7","8"],"Georgia",0.8,4,0.06);
+    
+    creates an ocathedron woith the nuners 1 to 8 on the faces
+*/
+    
+ difference() {
+       p_render(s,faces=true);
+       for (i =[0:len(texts)-1])  {
+           face=p_faces(s)[i];
+           facep =  as_points(face,p_vertices(s));
+           center=centre(facep);
+           normal=normal(facep);
+           echo(i,face,facep,center,normal,texts[i]);
+           orient_to(center,normal)
+               scale(size) rotate([0,0,0])
+                   translate([-offset,0,-depth])
+                     linear_extrude(height=depth+0.1)
+                        text(texts[i],valign="center", font=font);
+       }
+     }
+ }  // end of p_render_text
+   
 
 // modulation  
                            
@@ -1705,9 +1868,9 @@ scale(10) p_render(s,false,false,true);
 */
 
 /*
-s=plane(propellor(dual(plane(trunc(C())))));
+s=place(canon(plane(propellor(D()),10),10));
 p_describe(s);
-scale(10) p_render(shell(s),false,false,true);
+scale(20) p_render(shell(s,outer_inset=0.15,fn=[],thickness=0.2));
 
 */
 
@@ -1727,11 +1890,52 @@ scale(20) difference() {
     ground();
 }
 */
+/*
+rd = plane(join(C())); // rhombic dodecahedron
+di = plane(ortho(C())); // deltoid icositetrahedron
+c=C();
+p_print(rd);
+p_print(di);
+intersection() {
+color("green") scale(30) rotate([0,45,0]) p_render(rd);
+color("red") scale(31) p_render(di);
+color("yellow") scale(60) p_render(c);
+}
 
-s=place(T());
-p_print(s);
-t=shell(s,outer_inset=0.4, inner_inset=0,thickness=0.4);
-scale(18) p_render(t);
-  
- 
-   
+*/
+/*
+r=0.8;
+scale(20)
+intersection() {
+  p_render(C());
+  scale(r) p_render(plane(meta(C())));  
+
+}
+*/
+/*
+intersection(){
+   color("red") scale([0.8,0.8,3]) p_render(C());
+   color("green") rotate([0,0,45]) scale([2,2,1.2])  p_render(O());
+   color("blue") rotate([0,0,45]) scale([1.1,1.1,1.8])  p_render(O());
+}
+*/
+
+/*
+// http://www.smorf.nl/index.php?crystal=Moschellandsbergite_D1
+
+r1=0.65;
+r2=0.6;
+r3=0.55;
+scale(20)
+intersection() {
+ color("red")   scale(r1) p_render(C());
+ color("green") scale(r2) p_render(plane(join(C())));  
+ color("blue")  scale(r3) p_render(plane(ortho(C())));  
+}
+*/
+
+
+           
+k=0.4;
+$fn=20;
+scale(20) p_render_text(place(O()),["1","2","3","4","5","6","7","8"],"Georgia",0.8,4,0.06);
