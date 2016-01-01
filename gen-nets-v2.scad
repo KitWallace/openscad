@@ -2105,14 +2105,13 @@ function faces_to_origin(obj,scale) =
 // t = canon(plane(snub(D())),30);
 // t=StewartsG3();
 // t=kis(O(),1.15);
+// t=random(kis(C(),-0.2),0.3);
 
-// t=D();
-
-t=random(kis(C(),-0.2),0.3);
+t=D();
 
 p_describe(t);
 echo(p_dihedral_angles(t));
-$fn=5;
+
 thickness=0.1;
 length=10;
               
@@ -2121,8 +2120,5 @@ complete=updown($t,0.05);
     
 net = p_create_net(t);
 echo("net", net);
-// p_net_render(t,net,complete);
-p_net_render(t,net,0,colors=variedcolors);
-p_net_render(t,net,1,colors=["gray"]);
-// translate ([20,0,0]) scale(10) p_render(place(t));
 
+p_net_render(t,net,complete,colors=variedcolors);
