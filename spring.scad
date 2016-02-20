@@ -122,7 +122,8 @@ function loop_points(step, end, t = 0) =
        ? concat([f(t)], loop_points(step, end, t + step )) 
        : [] ;
 
-section_points = circle_points(Wire_radius, $fn=20);
+//section_points = circle_points(Wire_radius, $fn=20);
+section_points = circle_points(Wire_radius, 360/$fn);
 //echo(section_points);
 
 loop_points = loop_points(Step ,360* Coils + Step);
