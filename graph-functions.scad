@@ -23,6 +23,7 @@ module graph(fn,min,max,step,scale=[1,1,1],thickness=0.5) {
 
 
 //  sum of sine and cosine functions
+/*
 function f(fn,x) = 
       fn== 1  ? [x,0.5*sin(x),0] 
     : fn== 2  ? [x,0.3*cos(x),0] 
@@ -36,6 +37,7 @@ union() {
 }
 
 line([0,-0.25,2],[40,-0.25,2]);
+*/
 
 // Rose curves
 /*
