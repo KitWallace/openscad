@@ -61,3 +61,29 @@ function f(fn,x) =
      
  }
 */
+
+//  cardiod
+/*
+function f(fn,x) = 
+   fn ==1 ? [2 * cos(x) - cos(2 * x),
+             2 * sin(x) - sin(2 * x),
+             0]
+   : 0 ;
+   
+cycles=1;
+graph(1,0,cycles*360,1,scale=[10,10,8],thickness=3);
+rotate([0,0,180]) graph(1,0,cycles*360,1,scale=[10,10,5],thickness=4);
+
+*/
+
+// lissajous
+
+a=5;b=4;delta=0;
+
+function f(fn,x) =
+   fn==1 ?  [sin(a * x + delta),
+             sin(b * x ),
+             0]
+   : 0 ;
+cycles=1;
+graph(1,0,cycles*360,1,scale=[10,10,8],thickness=0.5);       
