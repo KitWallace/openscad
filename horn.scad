@@ -104,7 +104,7 @@ module extrude_fun(step,min,max,sides,scale=[1,1,1])  {
 }; 
 
 r=10;
-h=50;
+h=30;
 sides = 50;
 
 // a simple column
@@ -119,10 +119,15 @@ function sinf(a,t) =
 
 // the offset is linearly proportional to height
 function linearf(a,t) =
-  (r * (1-a) * [ 4*a + cos(t),sin(t),0] ) ;
+  (r * (1-a) * [ 4*a + cos(t),sin(t),0]);
 
+// parametric teardrop curve
+function teardropf(a,t) =
+  let (m=a*10)
+  r* [cos(t),sin(t) * pow(sin(t/2),m),0];
+  
 // select active function here
-function pf(d,t) =  sinf(d/h,t);
+function pf(d,t) =  linearf(d/h,t);
 
 extrude_fun(0.2,0,h,sides);
 
