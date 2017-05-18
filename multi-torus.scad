@@ -1,33 +1,38 @@
-// Overall scale                
-Scale=2;
+// number of links
+N=3;
+// height of undulations
+height=0.15;
+// per link displacement from centre
+df=0.15;
+// Rope diameter
+R=0.02;   
+// decrease for finer details
+Step=2 ;  
+// overall scale
+Scale=20;
 // Sides of rope - must be a divisor of 360
 Sides=20; 
-// Rope diameter
-R=0.2;  
-// Rope Step size - decrease for finer details
-Step=5 ;  
-// 1 - fully linked  , 2 chain limked
-config=1;
-// number of links
-n=4;
+// x,y,z scaling
+Kscale=[1,1,1]; 
 
-//  end of parameters
-r = config==1 ? 30 : 90;
-d= config==1? 2.6  : n*0.8;
-theta= 360/n;
-Kscale=[1,1,1];  // x,y,z scaling
+function f(t,h=height,cycles=N) =
+   [ cos(t), sin(t), h*sin(cycles*t)];
+
+function colour(i) = 
+ ["red","green","blue","yellow","pink","black","orange"] [i % 7];
 
 path = loop_points(Step);
 knot= path_knot(path,R,Sides,Kscale);
-
-for (k=[0:n-1]) {
-scale(Scale) 
-    color(get_colour(k)) 
-   translate([d * cos (k*theta), d * sin(k*theta),0])
-          
-            rotate([0,0,r + k * theta])  
-               show_solid(knot);
- }
+theta=360/N;
+delta=180/N;
+d=df*N;
+scale(Scale)
+for (k =[0:N-1]) {
+    color(colour(k)) 
+     translate([d * cos (k*theta), d * sin(k*theta),0])
+        rotate([0,0,delta + k * theta])  
+           show_solid(knot);
+};
 
 // contributions  by nophead  and oskar
 
@@ -75,9 +80,9 @@ function orient_to(centre,normal, p) = m_rotate([0, atan2(sqrt(pow(normal.x, 2) 
                      * m_translate(centre);
 
 // solid from path
-function circle_points(r = 1, sides, a = 0) = 
+function circle_points(r = 1, sides, phase, a = 0) = 
     a < 360 
-       ? concat([[r * sin(a), r * cos(a), 0]], circle_points(r, sides, a + 360 / sides)) 
+       ? concat([[r * sin(a+phase), r * cos(a+phase), 0]], circle_points(r, sides, phase, a + 360 / sides)) 
        : [] ;
 
 function loop_points(step, t = 0) = 
@@ -159,22 +164,14 @@ function curve_length(step,t=0) =
       
 //  create a knot from a path 
 
-function path_knot(path,r,sides,kscale,phase)  =
+function path_knot(path,r,sides,kscale,phase=45)  =
   let(loop_points = scale(path,kscale))
-  let(circle_points = circle_points(r,sides))
+  let(circle_points = circle_points(r,sides,phase))
   let(tube_points = tube_points(loop_points,circle_points))
   let(loop_faces = loop_faces(len(loop_points),sides))
   poly(name="Knot",
          vertices = tube_points,
          faces = loop_faces);
    
- // render_type function-3
- 
-function f(t,a=2,b=0.75) = 
-    [  sin(t) + a * sin(2 * t),
-       cos(t) - a * cos(2 * t),
-       - b * sin (3 * t)
-    ];            
 
-function get_colour(k) = 
-   ["red","green","blue","yellow","pink","orange","black"][k % len(colours)];
+ 
