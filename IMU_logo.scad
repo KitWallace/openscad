@@ -140,15 +140,15 @@ function path_knot(path,r,sides,kscale,phase=45)  =
    
 // main  
 // main 
-eccentricity=1;
-function f(t,e=eccentricity,A=2.5) =
-let (r= (A +cos(2*t)))
-   [ r*cos(t),r* e* sin(t), 0];
+
+function f(t,A=0.42) =
+   let (r= (1 + (A+ (1-A)* cos(2*t))))
+   [ r*cos(t),r*sin(t), 0];
 
 Scale=5;
 Sides=30;  // Sides of rope - must be a divisor of 360
 Kscale=[1,1,1];  // x,y,z scaling
-R=0.95;   // Rope diameter
+R=0.55;   // Rope diameter
 Step=2 ;  // decrease for finer details
 colours = ["aquamarine","steelblue","blue","yellow","pink"];
 path = loop_points(Step);
