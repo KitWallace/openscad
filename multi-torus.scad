@@ -3,7 +3,7 @@ N=3;
 // height of undulations
 height=0.15;
 // link displacement from centre 
-df=0.5;
+d=0.5;
 // Rope diameter
 R=0.02;   
 // decrease for finer details
