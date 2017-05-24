@@ -2,8 +2,8 @@
 N=3;
 // height of undulations
 height=0.15;
-// per link displacement from centre
-df=0.15;
+// link displacement from centre 
+df=0.5;
 // Rope diameter
 R=0.02;   
 // decrease for finer details
@@ -25,7 +25,6 @@ path = loop_points(Step);
 knot= path_knot(path,R,Sides,Kscale);
 theta=360/N;
 delta=180/N;
-d=df*N;
 scale(Scale)
 for (k =[0:N-1]) {
     color(colour(k)) 
