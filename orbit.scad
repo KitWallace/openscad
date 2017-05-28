@@ -22,7 +22,7 @@ colours=["red","green","pink","orange","purple","yellow"];
            color(colours[k]) 
               rotate([0,0,k * 72]) 
                 rotate([60,0,0]) 
-                   rotate([0,0,18])
+                   rotate([0,0,p*72])
                      fun_knot(Step,R,Sides);
    }
 
