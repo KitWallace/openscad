@@ -1,37 +1,34 @@
+// number of sides of rope - must be a divisor of 360
+Sides=5;  
+ // step size in degrees 
+Step=2;  
+ // rope radius
+R=0.05;    
+// overall scale
+Scale=20; 
+// depth of undulation 
+B=0.1;
+// link rotation  % of cycle  0.25 disjoint , 0 joint
+p= 0.25;  
 
-Sides=25;  // number of sides of rope - must be a divisor of 360
-Scale=2;   // overall scale
-Step=1;    // step size in degrees 0.5 for final print
-R=0.6;     // rope radius
-
-
-/* 1 + 5 loops, rotated at increments of 72 degress at an inclineation of 60 degrees 
+/* 1 + 5 loops, rotated at increments of 72 degress at an inclination of 60 degrees 
 */
-colors=["red","green","pink","orange","purple"];
+colours=["red","green","pink","orange","purple","yellow"];
 
-scale(Scale) 
-  union(){
-    color("yellow")  fun_knot(Step,R,Sides);
-    for (k =[0:4])
-        color(colors[k]) 
-          rotate([0,0,k * 72]) 
-          rotate([60,0,18])  // quarter cycle
-           fun_knot(Step,R,Sides);
-}
- 
- 
-A=10;
-B=0.15;
-N=5;
-e=1;
+    scale(Scale) {
+      rotate([0,0,-p*72])
+              fun_knot(Step,R,Sides); 
+       for (k =[0:4])
+           color(colours[k]) 
+              rotate([0,0,k * 72]) 
+                rotate([60,0,0]) 
+                   rotate([0,0,18])
+                     fun_knot(Step,R,Sides);
+   }
 
 function f(t) =
-      let (r=A*(1 + B * sin(N *t)))
-       [  
-          r*cos(t+45)  ,
-          e*r*sin(t+45) ,
-         0
-       ];            
+   let (r= 1 + B * sin(5 *t))
+   [ r*cos(t), r*sin(t), 0];            
             
 // contributions  by nophead
 // requires openscad development snapshot 
