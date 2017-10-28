@@ -70,6 +70,7 @@ function loop_faces(segs, sides, open=false) =
        ]  
      ;
 
+// create a 3D object by hulling spheres along a path
 module hull_path(path,r) {
     for (i = [0 : len(path) - 1 ]) {
         hull() {
@@ -79,9 +80,6 @@ module hull_path(path,r) {
     }
 };
 
-function path_points(step,min=0,max=360,params) = 
-    [for (t=[min:step:max-step]) f(t,params)];
-
 //  create a polyhedron from a path 
 
 function poly_path(path,r,sides,phase=45,open=false)  =
@@ -90,8 +88,8 @@ function poly_path(path,r,sides,phase=45,open=false)  =
   let(loop_faces = loop_faces(len(path),sides,open))
   [tube_points,loop_faces];
         
-// 
-module graph(path,thickness=0.5,open=0) {
+// create a plane object by hulling circles along the path
+module plane_path(path,thickness=0.5,open=0) {
    for(i =[0:len(path)-1-open]) {
       hull() {
           translate(path[i]) circle(d=thickness);
@@ -110,6 +108,9 @@ module sky(z=200) {
    rotate([0,180,0]) ground(z);
 }
 
+// the pattern function
+// t is the angle
+// param is an array of three arrays, each defining a relative rate of rotation, a radius(amplitudu) and a phase angle
 function f(t,param) = 
     let(p1=param[0],p2=param[1],p3=param[2])
     let(r1=p1[0],a1=p1[1],t1=p1[2])
@@ -118,14 +119,15 @@ function f(t,param) =
     let(X=a1*cos(r1*(t+t1))+a2*cos(r2*(t+t2))+a3*cos(r3*(t+t3)))
     let(Y=a1*sin(r1*(t+t1))+a2*sin(r2*(t+t2))+a3*sin(r3*(t+t3)))
     let(r=sqrt(X*X+Y*Y))
-    [X,Y,pow(r/7,3)]
+    let(Z=pow(r/7,3))
+    [X,Y,Z]
    ;
-// function parameters
+
 
 step=0.5;   // step size in degrees
 thickness=0.5; // width of the line 
 
-/*  Engare 1
+/*  
 nodes=4;
 cycles=1;
 R=nodes/cycles;
@@ -136,7 +138,8 @@ links=[link1,link2,link3];
 
 reps=1;
 */
-/*  Engare 2
+
+/*
 nodes=4;
 cycles=1;
 R=nodes/cycles;
@@ -151,8 +154,8 @@ links=[link1,link2,link3];
 reps=1;
 
 */
-
-// swirl
+/*
+//swirl
 cycles=1;
 nodes=6;
 
@@ -163,8 +166,8 @@ link3=[5*R,3*0.75,10];
 links=[link1,link2,link3];
 
 reps=1;
-
-/*
+*/
+/*  Limaçon
 nodes=1;
 cycles=1;
 R=nodes/cycles;
@@ -178,12 +181,26 @@ links=[link1,link2,link3];
 
 reps=1;
 */
+
+// fridge magnet
+$t=0.2;
+nodes=15;
+cycles=4;
+R=nodes/cycles;
+d=10.5*$t; 
+link1=[1,14.5,0];
+link2=[R,10.5-d,0];  // anticlockwise 
+link3=[2*R,d,0];
+links=[link1,link2,link3];
+
+reps=1;
+
 render="2D";
 method="poly";
 $fn=12;
 
 // overall scale
-Scale=2;
+Scale=1;
 path = path_points(step,0, 1*cycles*360,links);
 color("red")
 scale(Scale)
@@ -191,7 +208,7 @@ if (render=="2D") {
      for(rep=[0:1:reps-1]) {
          pmax= 360 / nodes;
          rotate([0,0,pmax*rep/reps])
-         graph( path,thickness);
+         plane_path( path,thickness);
      }
 } 
 
@@ -201,7 +218,7 @@ else if (render=="2.5D") {
        for(rep=[0:1:reps-1]) {
            pmax= 360 / nodes;
            rotate([0,0,pmax*rep/reps])
-           graph(path, thickness);
+           plane_path(path, thickness);
     }
 } 
 
@@ -233,4 +250,4 @@ else if (render=="3D")
           }  
       }
   }
-
+cylinder(d=8,h=10,center=true,$fn=50);
