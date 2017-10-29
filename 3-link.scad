@@ -1,5 +1,146 @@
 // create 2D,2.5D amd 3D models based on 
 
+step=0.5;   // step size in degrees
+thickness=0.5; // width of the line 
+
+/*  Engare 1 
+nodes=4;
+cycles=1;
+R=nodes/cycles;
+link1=[1,10,0];
+link2=[R,5.5,0];
+link3=[4*R,1.5,0];
+links=[link1,link2,link3];
+
+reps=1;
+*/
+
+// Engare 2 
+nodes=4;
+cycles=1;
+R=nodes/cycles;
+
+R=10;
+
+link1=[1,10,0];
+link2=[-R,5,0];  // anticlockwise 
+link3=[3*R,1.75,0];
+links=[link1,link2,link3];
+
+reps=1;
+
+
+/*
+// swirl
+cycles=1;
+nodes=6;
+
+R=6;
+link1=[1,8,0];
+link2=[-R,5,0];
+link3=[5*R,3*0.75,10];
+links=[link1,link2,link3];
+
+reps=1;
+*/
+/*  Limaçon
+nodes=1;
+cycles=1;
+R=nodes/cycles;
+
+R=1;
+
+link1=[1,10,0];
+link2=[R,7,0];  // anticlockwise 
+link3=[3*R,0,0];
+links=[link1,link2,link3];
+
+reps=1;
+*/
+/*
+$t=0.2;
+// fridge magnet inset
+nodes=15;
+cycles=4;
+R=nodes/cycles;
+d=2; 
+link1=[1,14.5,0];
+link2=[R,10.5-d,0];  // anticlockwise 
+link3=[2*R,d,0];
+links=[link1,link2,link3];
+
+reps=1;
+*/
+
+render="2D";
+method="poly";
+$fn=12;
+
+// overall scale
+Scale=1;
+path = path_points(step,0, 1*cycles*360,links);
+color("red")
+scale(Scale)
+if (render=="2D") {
+     for(rep=[0:1:reps-1]) {
+         pmax= 360 / nodes;
+         rotate([0,0,pmax*rep/reps])
+         plane_path( path,thickness);
+     }
+} 
+
+else if (render=="2.5D") {    
+    height=2;
+    linear_extrude(height=height)
+       for(rep=[0:1:reps-1]) {
+           pmax= 360 / nodes;
+           rotate([0,0,pmax*rep/reps])
+           plane_path(path, thickness);
+    }
+} 
+
+else if (render=="3D")
+   if( method=="hull") 
+     if(reps==1) {
+       hull_path(path,thickness);
+     }
+     else {   
+       for(rep=[0:1:reps-1]) 
+          rotate([0,0,pmax*rep/reps])
+             hull_path(path,thickness);
+        }
+   else if(method=="poly") {
+       Sides=12;  // Sides of rope - must be a divisor of 360
+       Phase = 45;  // phase angle for profile (maters for low Sides
+       Open = false;   // true if knot is open or partial
+       Start=0; End=cycles*360;  // change for partial path  
+       if(reps==1) {
+            poly= poly_path(path,thickness,Sides,Phase,Open);
+            polyhedron(poly[0],poly[1]);
+        }
+        else {   
+           poly= poly_path(path,thickness,Sides,Phase,Open);
+           for(rep=[0:1:reps-1]) {
+               pmax= 360 / nodes;
+               rotate([0,0,pmax*rep/reps])
+               polyhedron(poly[0],poly[1]);
+          }  
+      }
+  }
+
+// generative function
+  function f(t,param) = 
+    let(p1=param[0],p2=param[1],p3=param[2])
+    let(r1=p1[0],a1=p1[1],t1=p1[2])
+    let(r2=p2[0]+r1,a2=p2[1],t2=p2[2])
+    let(r3=p3[0]+r2,a3=p3[1],t3=p3[2])
+    let(X=a1*cos(r1*(t+t1))+a2*cos(r2*(t+t2))+a3*cos(r3*(t+t3)))
+    let(Y=a1*sin(r1*(t+t1))+a2*sin(r2*(t+t2))+a3*sin(r3*(t+t3)))
+    let(r=sqrt(X*X+Y*Y))
+    let(Z=pow(r/7,3))
+    [X,Y,Z]
+   ;
+
 // utility functions  
 function m_translate(v) = [ [1, 0, 0, 0],
                             [0, 1, 0, 0],
@@ -69,8 +210,7 @@ function loop_faces(segs, sides, open=false) =
          ]   
        ]  
      ;
-
-// create a 3D object by hulling spheres along a path
+// create a 3D objec by hulling spheres
 module hull_path(path,r) {
     for (i = [0 : len(path) - 1 ]) {
         hull() {
@@ -81,14 +221,13 @@ module hull_path(path,r) {
 };
 
 //  create a polyhedron from a path 
-
 function poly_path(path,r,sides,phase=45,open=false)  =
   let(circle_points = circle_points(r,sides,phase))
   let(tube_points = tube_points(path,circle_points))
   let(loop_faces = loop_faces(len(path),sides,open))
   [tube_points,loop_faces];
         
-// create a plane object by hulling circles along the path
+// create a 2d object from a path by hulling circles
 module plane_path(path,thickness=0.5,open=0) {
    for(i =[0:len(path)-1-open]) {
       hull() {
@@ -107,147 +246,3 @@ module ground(z=200) {
 module sky(z=200) {
    rotate([0,180,0]) ground(z);
 }
-
-// the pattern function
-// t is the angle
-// param is an array of three arrays, each defining a relative rate of rotation, a radius(amplitudu) and a phase angle
-function f(t,param) = 
-    let(p1=param[0],p2=param[1],p3=param[2])
-    let(r1=p1[0],a1=p1[1],t1=p1[2])
-    let(r2=p2[0]+r1,a2=p2[1],t2=p2[2])
-    let(r3=p3[0]+r2,a3=p3[1],t3=p3[2])
-    let(X=a1*cos(r1*(t+t1))+a2*cos(r2*(t+t2))+a3*cos(r3*(t+t3)))
-    let(Y=a1*sin(r1*(t+t1))+a2*sin(r2*(t+t2))+a3*sin(r3*(t+t3)))
-    let(r=sqrt(X*X+Y*Y))
-    let(Z=pow(r/7,3))
-    [X,Y,Z]
-   ;
-
-
-step=0.5;   // step size in degrees
-thickness=0.5; // width of the line 
-
-/*  
-nodes=4;
-cycles=1;
-R=nodes/cycles;
-link1=[1,10,0];
-link2=[R,5.5,0];
-link3=[4*R,1.5,0];
-links=[link1,link2,link3];
-
-reps=1;
-*/
-
-/*
-nodes=4;
-cycles=1;
-R=nodes/cycles;
-
-R=10;
-
-link1=[1,10,0];
-link2=[-R,5,0];  // anticlockwise 
-link3=[3*R,1.75,0];
-links=[link1,link2,link3];
-
-reps=1;
-
-*/
-/*
-//swirl
-cycles=1;
-nodes=6;
-
-R=6;
-link1=[1,8,0];
-link2=[-R,5,0];
-link3=[5*R,3*0.75,10];
-links=[link1,link2,link3];
-
-reps=1;
-*/
-/*  Limaçon
-nodes=1;
-cycles=1;
-R=nodes/cycles;
-
-R=1;
-
-link1=[1,10,0];
-link2=[R,7,0];  // anticlockwise 
-link3=[3*R,0,0];
-links=[link1,link2,link3];
-
-reps=1;
-*/
-
-// fridge magnet
-$t=0.2;
-nodes=15;
-cycles=4;
-R=nodes/cycles;
-d=10.5*$t; 
-link1=[1,14.5,0];
-link2=[R,10.5-d,0];  // anticlockwise 
-link3=[2*R,d,0];
-links=[link1,link2,link3];
-
-reps=1;
-
-render="2D";
-method="poly";
-$fn=12;
-
-// overall scale
-Scale=1;
-path = path_points(step,0, 1*cycles*360,links);
-color("red")
-scale(Scale)
-if (render=="2D") {
-     for(rep=[0:1:reps-1]) {
-         pmax= 360 / nodes;
-         rotate([0,0,pmax*rep/reps])
-         plane_path( path,thickness);
-     }
-} 
-
-else if (render=="2.5D") {    
-    height=2;
-    linear_extrude(height=height)
-       for(rep=[0:1:reps-1]) {
-           pmax= 360 / nodes;
-           rotate([0,0,pmax*rep/reps])
-           plane_path(path, thickness);
-    }
-} 
-
-else if (render=="3D")
-   if( method=="hull") 
-     if(reps==1) {
-       hull_path(path,thickness);
-     }
-     else {   
-       for(rep=[0:1:reps-1]) 
-          rotate([0,0,pmax*rep/reps])
-             hull_path(path,thickness);
-        }
-   else if(method=="poly") {
-       Sides=12;  // Sides of rope - must be a divisor of 360
-       Phase = 45;  // phase angle for profile (maters for low Sides
-       Open = false;   // true if knot is open or partial
-       Start=0; End=cycles*360;  // change for partial path  
-       if(reps==1) {
-            poly= poly_path(path,thickness,Sides,Phase,Open);
-            polyhedron(poly[0],poly[1]);
-        }
-        else {   
-           poly= poly_path(path,thickness,Sides,Phase,Open);
-           for(rep=[0:1:reps-1]) {
-               pmax= 360 / nodes;
-               rotate([0,0,pmax*rep/reps])
-               polyhedron(poly[0],poly[1]);
-          }  
-      }
-  }
-cylinder(d=8,h=10,center=true,$fn=50);
