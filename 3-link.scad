@@ -228,8 +228,8 @@ function poly_path(path,r,sides,phase=45,open=false)  =
   [tube_points,loop_faces];
         
 // create a 2d object from a path by hulling circles
-module plane_path(path,thickness=0.5,open=0) {
-   for(i =[0:len(path)-1-open]) {
+module plane_path(path,thickness=0.5) {
+   for(i =[0:len(path)-1]) {
       hull() {
           translate(path[i]) circle(d=thickness);
           translate(path[(i+1) % len(path)]) circle(d=thickness);
