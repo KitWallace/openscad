@@ -58,12 +58,11 @@ links=[link1,link2,link3];
 reps=1;
 */
 /*
-$t=0.2;
 // fridge magnet inset
 nodes=15;
 cycles=4;
 R=nodes/cycles;
-d=2; 
+d=2; // vary this  
 link1=[1,14.5,0];
 link2=[R,10.5-d,0];  
 link3=[2*R,d,0];
