@@ -51,7 +51,7 @@ R=nodes/cycles;
 R=1;
 
 link1=[1,10,0];
-link2=[R,7,0];  // anticlockwise 
+link2=[R,7,0];  
 link3=[3*R,0,0];
 links=[link1,link2,link3];
 
@@ -65,7 +65,7 @@ cycles=4;
 R=nodes/cycles;
 d=2; 
 link1=[1,14.5,0];
-link2=[R,10.5-d,0];  // anticlockwise 
+link2=[R,10.5-d,0];  
 link3=[2*R,d,0];
 links=[link1,link2,link3];
 
