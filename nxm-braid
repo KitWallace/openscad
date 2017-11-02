@@ -1,0 +1,119 @@
+// draw the n x m braid 
+// see https://arbitrarilyclose.com/2017/10/21/knots-links-learning/
+
+m=3;
+step=1;
+radius=0.15;
+thickness=0.02;
+$fn=20;
+grid=false;
+
+
+// computed
+r=radius*sqrt(2);
+ar = step*0.5*sqrt(2)-2*r/sqrt(2)+thickness/2;
+
+function centre(i,j,step,r)=[i*step,j*step,0];
+function left(i,j,step,r) = [i*step-r,j*step,0];
+function right(i,j,step,r) = [i*step+r,j*step,0];
+function top(i,j,step,r) = [i*step,j*step +r,0];
+function bottom(i,j,step,r) = [i*step,j*step -r,0];
+
+module arc(r,d,a) {
+    difference() {
+         circle(r,$fn=50);
+         circle(r-d,$fn=50);
+         rotate([0,0,45+a]) translate([0,r,0])square(2*r,center=true);
+         rotate([0,0,135+a]) translate([0,r,0])square(2*r,center=true);
+    }
+}
+
+module line (p1,p2,thickness) {
+    hull() {
+            translate (p1) circle(d=thickness);
+            translate (p2) circle(d=thickness);
+         }
+ }
+     
+if (grid) 
+color ("white")
+{
+for (i=[1:n]) 
+    for  (j=[1:m]) 
+        translate (centre(i,j,step,radius))
+          circle(radius);
+
+for (i=[1:n-1]) 
+    for  (j=[1:m-1]) 
+        translate (centre(i+0.5,j+0.5,step,radius))
+             circle(radius);
+}
+
+// braid
+{
+//upper right
+color("red"){
+  for (i=[1:n]) {
+     for  (j=[1:m-1]) 
+         line (left(i,j,step,r),top(i+0.5,j+0.5,step,r),thickness);
+     line(left(i,m,step,r),top(i,m,step,r),thickness);
+}
+
+for  (i=[1:n]) 
+     line(bottom(i-0.5,m+0.5,step,r),right(i-0.5,m+0.5,step,r),thickness);
+
+
+     
+//lower right
+
+for (i=[1:n-1]) 
+    for  (j=[1:m-1]) 
+         line (bottom(i+0.5,j+0.5,step,r),right(i+1,j+1,step,r),thickness);
+
+for(i=[1:n]) 
+     line(bottom(i,1,step,r),right(i,1,step,r),thickness);
+    
+for  (j=[2:m]) 
+     line(right(1,j,step,r),bottom(0.5,j-0.5,step,r),thickness);
+
+//lower left
+for (i=[2:n]) 
+    for  (j=[1:m-1]) 
+         line (bottom(i,j,step,r),left(i-0.5,j+0.5,step,r),thickness);
+ 
+for  (i=[2:n]) 
+     line(bottom(i,m,step,r),left(i-0.5,m+0.5,step,r),thickness);
+ 
+for  (j=[1:m])
+    line(bottom(1,j,step,r),left(1,j,step,r),thickness);
+ 
+for  (j=[1:m]) 
+     line(right(0.5,j-0.5,step,r),top(0.5,j-0.5,step,r),thickness);
+   
+//upper left
+for (i=[1:n-1]) {
+    for  (j=[1:m-1])
+         line(right(i+0.5,j+0.5,step,r),top(i,j+1,step,r),thickness);
+    line (top(i,1,step,r),right(i+0.5,0.5,step,r),thickness);
+}
+
+for  (j=[1:m]) 
+     line(right(n,j,step,r),top(n,j,step,r),thickness);
+  
+for  (j=[1:m]) 
+    line (left(n+0.5,j+0.5,step,r),bottom(n+0.5,j+0.5,step,r),thickness);
+ 
+for  (i=[1:n])
+    line(top(i+0.5,0.5,step,r),left(i+0.5,0.5,step,r),thickness);
+}
+color("black") {
+for(i=[1:n]) {
+    translate(bottom(i,1,step,r)) arc(ar,thickness,270);
+    translate(top(i,m,step,r)) arc(ar,thickness,90);
+}
+for(j=[1:m]) {
+    translate(left(1,j,step,r)) arc(ar,thickness,180);
+    translate(right(n,j,step,r)) arc(ar,thickness,0);
+}
+}
+}
