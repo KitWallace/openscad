@@ -15,6 +15,7 @@ links=[link1,link2,link3];
 reps=1;
 */
 
+/*
 // Engare 2 
 nodes=4;
 cycles=1;
@@ -29,7 +30,7 @@ links=[link1,link2,link3];
 
 reps=1;
 
-
+*/
 /*
 // swirl
 cycles=1;
@@ -38,7 +39,7 @@ nodes=6;
 R=6;
 link1=[1,8,0];
 link2=[-R,5,0];
-link3=[5*R,3*0.75,10];
+link3=[5*R,2.25,90];
 links=[link1,link2,link3];
 
 reps=1;
@@ -51,30 +52,47 @@ R=nodes/cycles;
 R=1;
 
 link1=[1,10,0];
-link2=[R,7,0];  
+link2=[R,7,0];  // anticlockwise 
 link3=[3*R,0,0];
 links=[link1,link2,link3];
 
 reps=1;
 */
 /*
+$t=0.2;
 // fridge magnet inset
 nodes=15;
 cycles=4;
 R=nodes/cycles;
-d=2; // vary this  
+d=2; 
 link1=[1,14.5,0];
-link2=[R,10.5-d,0];  
+link2=[R,10.5-d,0];  // anticlockwise 
 link3=[2*R,d,0];
 links=[link1,link2,link3];
 
 reps=1;
+
 */
+
+$t=0.2;
+ 
+nodes=5;
+cycles=1;
+R=nodes/cycles;
+
+R=5;
+link1=[1,10,0];
+link2=[R,5,0];   
+link3=[-4*R,3.33,-90];
+links=[link1,link2,link3];
+
+reps=1;
+
 
 render="2D";
 method="poly";
 $fn=12;
-
+//echo(f(90,links));
 // overall scale
 Scale=1;
 path = path_points(step,0, 1*cycles*360,links);
@@ -127,14 +145,15 @@ else if (render=="3D")
       }
   }
 
-// generative function
+
+  // generative function
   function f(t,param) = 
     let(p1=param[0],p2=param[1],p3=param[2])
     let(r1=p1[0],a1=p1[1],t1=p1[2])
     let(r2=p2[0]+r1,a2=p2[1],t2=p2[2])
     let(r3=p3[0]+r2,a3=p3[1],t3=p3[2])
-    let(X=a1*cos(r1*(t+t1))+a2*cos(r2*(t+t2))+a3*cos(r3*(t+t3)))
-    let(Y=a1*sin(r1*(t+t1))+a2*sin(r2*(t+t2))+a3*sin(r3*(t+t3)))
+    let(X=a1*cos(r1*t+t1)+a2*cos(r2*t+t2)+a3*cos(r3*t+t3))
+    let(Y=a1*sin(r1*t+t1)+a2*sin(r2*t+t2)+a3*sin(r3*t+t3))
     let(r=sqrt(X*X+Y*Y))
     let(Z=pow(r/7,3))
     [X,Y,Z]
@@ -227,8 +246,8 @@ function poly_path(path,r,sides,phase=45,open=false)  =
   [tube_points,loop_faces];
         
 // create a 2d object from a path by hulling circles
-module plane_path(path,thickness=0.5) {
-   for(i =[0:len(path)-1]) {
+module plane_path(path,thickness=0.5,open=0) {
+   for(i =[0:len(path)-1-open]) {
       hull() {
           translate(path[i]) circle(d=thickness);
           translate(path[(i+1) % len(path)]) circle(d=thickness);
