@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Braid Maker</title>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"/>
+        <script type="text/javascript" src="jscripts/braid.js"/>
+        <script type="text/javascript" src="jscripts/controls.js"/>
+        
+        <link rel="stylesheet" type="text/css" href="css/screen.css" media="screen" ></link>  
+    </head>   
+    <body>
+        <h1>Braid Maker&#160; &#160; <span>
+                <button style="background-color: lightgreen" id="but0" onClick="tab(0)">Braid</button>
+            </span>&#160; <span>
+                <button id="but1" onClick="tab(1)">Generate graphic (SVG)</button>
+            </span>&#160; <span>
+                <button id="but2" onClick="tab(2)">Generate 3D object (OpenSCAD) </button>
+            </span>&#160; <span>
+                <button id="but3" onClick="tab(3)">About</button>
+            </span>
+        </h1>
+        <div id="tab0">
+            <table >
+                <tr>
+                    <th>Grid</th>
+                    <td> N <input type="text" size="3" id="n" value="7"/> &#160;M <input type="text" size="3" id="m" value="5"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Hole size </th>
+                    <td>
+                        <input type="text" size="3" id="hole-1-size-x" value="0"/>&#160; <input type="text" size="3" id="hole-1-size-y" value="0"/>
+                    </td>
+                    
+                    <th>centre</th>
+                    <td> x:<input type="text" id="hole-1-x" value="" size="3"/>&#160;y: <input type="text" id="hole-1-y" value="" size="3"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Hole size </th>
+                    <td>
+                        <input type="text" size="3" id="hole-2-size-x" value="0"/>&#160; <input type="text" size="3" id="hole-2-size-y" value="0"/>
+                    </td>
+                    
+                    <th>centre</th>
+                    <td> x:<input type="text" id="hole-2-x" value="" size="3"/>&#160;y: <input type="text" id="hole-2-y" value="" size="3"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Hole size </th>
+                    <td>
+                        <input type="text" size="3" id="hole-3-size-x" value="0"/>&#160; <input type="text" size="3" id="hole-3-size-y" value="0"/>
+                    </td>
+                    
+                    <th>centre</th>
+                    <td> x:<input type="text" id="hole-3-x" value="" size="3"/>&#160;y: <input type="text" id="hole-3-y" value="" size="3"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Hole size </th>
+                    <td>
+                        <input type="text" size="3" id="hole-4-size-x" value="0"/>&#160; <input type="text" size="3" id="hole-41-size-y" value="0"/>
+                    </td>
+                    
+                    <th>centre</th>
+                    <td> x:<input type="text" id="hole-4-x" value="" size="3"/>&#160;y: <input type="text" id="hole-4-y" value="" size="3"/>
+                    </td>
+                </tr>
+                
+                
+            </table>
+            <div>
+                <h3>Operation</h3>
+                <div>
+                        <button onClick="initialize_grid()">Initialize Grid</button>
+                        <button onClick="make_braid()">Braid Grid</button>
+ <!--                       <button onClick="doit()">new SVG page</button>
+                        <button onClick="addit()">incremented SVG page</button>
+                        -->
+                  
+                        <button onClick="clear_braid()">Clear Braid</button>
+                    
+                </div>
+                
+                <h3>Progress</h3>
+                <div id="info"/>
+                <h3>Grid</h3>
+                <div style="page-break-before: always;">
+                    <table id="grid" border="1"/>
+                </div>
+            </div>
+        </div>
+        <div id="tab1" style="display:none">
+            <table>
+                <tr>
+                    <th>Grid Spacing</th>
+                    <td>
+                        <input type="text" size="6" id="step" value="10"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Braid Width</th>
+                    <td>
+                        <input type="text" size="6" id="width" value="6"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Rope Colours</th>
+                    <td>
+                        <input type="text" size="60" id="colours" value="red,green,blue,yellow,orange,aqua"/>
+                        
+                    </td>
+                </tr>
+                <tr>
+                    <th>Border</th>
+                    <td> Width <input type="text" size="6" id="line_width" value="0.3"/> Color
+                            <input type="text" size="15" id="line_colour" value="black"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Scale</th>
+                    <td>
+                        <input type="text" id="scale" size="4" value="1"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th/>
+                    <td>
+                        <button onClick="make_svg()">Generate Image</button>&#160;<button onClick="page_svg()">Image Page</button>
+                    </td>
+                </tr>
+            </table>
+            <div id="svgframe" style="page-break-before: always;">
+                <svg xmlns="http://www.w3.org/2000/svg" id="svgimage" width="1600" height="900">
+                    <g id="canvas" transform="translate(50,20)"/>
+                </svg>
+            </div>
+        </div>
+        <div id="tab3" style="display:none">
+            <h3>Purpose</h3>
+            <div>To construct N x M braids.  Holes can
+                be placed in the grid, either using the(rectangular) hole parameters and/or by checking
+                cells in the matrix. Coordinates of hole centres and size refer to the underlying  2*N+1 by 2*M+1 grid.</div>
+            <h3>Colours</h3>
+            <div>Colour names can taken from the list of <a href="http://www.december.com/html/spec/colorsvg.html">SVG colour</a> or use hex codes #hhhhhh.  There are also two palettes provided, p-svg for svg colours and p-greens for all greens</div>
+            <h3>Outputs</h3>
+            <div>Output as a graph using SVG or to OpenSCAD for generation of STL file for 3D
+                printing.  </div>
+            <h3>Method</h3>
+            <div>Braiding starts at an edge and proceeds over and under, turning left or right when
+                meeting an edge as required. If after completing one rope there are still cells
+                uncovered, another starting point is selected, until all possible starting points
+                have been tried. This process is guaranteed to complete for grids without holes but may fail when there are holes.</div>
+            <div>
+                <h3>Development</h3>
+                This script was developed by <a href="http://kitwallace.co.uk">Kit Wallace</a> using Javascript, JQuery and SVG (and StackOverFlow !).
+            <h3>Issues</h3>
+                <ul>
+                    <li>No input checks.</li>
+                    <li>Saving the SVG output doesnt work in Chome - use Firefox.</li>
+                   </ul>
+            </div>
+        </div>
+        <div id="tab2" style="display:none">
+            <table>
+                <tr>
+                    <th>Depth of smoothing </th>
+                    <td>
+                        <input type="text" size="3" id="depth" value="2"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th># sides of rope </th>
+                    <td>
+                        <input type="text" size="6" id="sides" value="10"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Rope radius </th>
+                    <td>
+                        <input type="text" size="6" id="radius" value="0.3"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Vertical scale </th>
+                    <td>
+                        <input type="text" size="6" id="vscale" value="0.3"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Overall scale</th>
+                    <td>
+                        <input type="text" size="6" id="scale" value="10"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        <button onClick="make_scad()">Generate OpenSCAD</button>
+                        <button onClick="download_scad()">Download OpenSCAD</button>
+                    </th>
+                </tr>
+            </table>
+            <div>
+                <pre id="scad" style="page-break-after: always;"/>
+                <hr/>
+                <pre id="base"  style="display:none;"><![CDATA[
+// create tubes as polyhedra 
+// tube can be open or closed
+
+// polyhedron constructor
+
+function poly(name,vertices,faces,debug=[],partial=false) = 
+    [name,vertices,faces,debug,partial];
+
+function p_name(obj) = obj[0];
+function p_vertices(obj) = obj[1];
+function p_faces(obj) = obj[2];
+  
+module show_solid(obj) {
+    polyhedron(p_vertices(obj),p_faces(obj),convexity=10);
+};
+
+// utility functions  
+function m_translate(v) = [ [1, 0, 0, 0],
+                            [0, 1, 0, 0],
+                            [0, 0, 1, 0],
+                            [v.x, v.y, v.z, 1  ] ];
+                            
+function m_rotate(v) =  [ [1,  0,         0,        0],
+                          [0,  cos(v.x),  sin(v.x), 0],
+                          [0, -sin(v.x),  cos(v.x), 0],
+                          [0,  0,         0,        1] ]
+                      * [ [ cos(v.y), 0,  -sin(v.y), 0],
+                          [0,         1,  0,        0],
+                          [ sin(v.y), 0,  cos(v.y), 0],
+                          [0,         0,  0,        1] ]
+                      * [ [ cos(v.z),  sin(v.z), 0, 0],
+                          [-sin(v.z),  cos(v.z), 0, 0],
+                          [ 0,         0,        1, 0],
+                          [ 0,         0,        0, 1] ];
+                            
+function vec3(v) = [v.x, v.y, v.z];
+function transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
+                            
+function orient_to(centre,normal, p) = m_rotate([0, atan2(sqrt(pow(normal.x, 2) + pow(normal.y, 2)), normal.z), 0]) 
+                     * m_rotate([0, 0, atan2(normal[1], normal[0])]) 
+                     * m_translate(centre);
+
+// solid from path
+
+
+function circle_points(r, sides,phase=45) = 
+    let (delta = 360/sides)
+    [for (i=[0:sides-1]) [r * sin(i*delta + phase), r *  cos(i*delta+phase), 0]];
+
+function loop_points(step,min=0,max=360) = 
+    [for (t=[min:step:max-step]) f(t)];
+
+function transform_points(list, matrix, i = 0) = 
+    i < len(list) 
+       ? concat([ transform(list[i], matrix) ], transform_points(list, matrix, i + 1))
+       : [];
+
+function tube_points(loop, circle_points,  i = 0) = 
+    (i < len(loop) - 1)
+     ?  concat(transform_points(circle_points, orient_to(loop[i], loop[i + 1] - loop[i] )), 
+               tube_points(loop, circle_points, i + 1)) 
+     : transform_points(circle_points, orient_to(loop[i], loop[0] - loop[i] )) ;
+     
+function flatten(l) = [ for (a = l) for (b = a) b ] ;
+    
+function loop_faces(segs, sides, open=false) = 
+  flatten( [for (i=[0:segs]) 
+        for (j=[0:sides -1]) 
+           [
+           [ i * sides + j, 
+           i * sides + (j + 1) % sides, 
+           ((i + 1) % segs) * sides + (j + 1) % sides]
+          , [ i * sides + j, 
+          ((i + 1) % segs) * sides + (j + 1) % sides, 
+          ((i + 1) % segs) * sides + j ]   
+         ]
+     ]) ;
+// smoothed path by interpolate between points 
+
+weight = [-1, 9, 9, -1] / 16;
+
+function interpolate(path,n,i) =
+        path[(i + n - 1) %n] * weight[0] +
+        path[i]             * weight[1] +
+        path[(i + 1) %n]    * weight[2] +
+        path[(i + 2) %n]    * weight[3] ;
+
+function subdivide(path,i=0) = 
+    i < len(path) 
+     ? concat([path[i]], 
+              [interpolate(path,len(path),i)],
+              subdivide(path, i+1))
+     : [];
+
+function smooth(path,n) =
+    n == 0
+     ?  path
+     :  smooth(subdivide(path),n-1);
+
+
+function path_segment(path,start,end) =
+    let (l = len(path))
+    let (s = max(floor(start * 360 / l),0),
+         e = min(ceil(end * 360 / l),l - 1))
+    [for (i=[s:e]) path[i]];
+
+
+function scale(path,scale,i=0) =
+    i < len(path)
+      ?  concat( 
+           [[path[i][0]*scale[0],path[i][1]*scale[1],path[i][2]*scale[2]]], 
+           scale(path,scale,i+1)
+         )
+      :  [];
+
+function curve_length(step,t=0) =
+    t < 360
+      ?  norm(f(t+step) - f(t)) + curve_length(step,t+step)
+      :  0;
+
+function map(t, min, max) =
+      min + t* (max-min)/360;
+    
+//  create a knot from a path 
+
+function path_knot(path,r,sides,kscale,phase=45,open=false)  =
+  let(loop_points = scale(path,kscale))
+  let(circle_points = circle_points(r,sides,phase))
+  let(tube_points = tube_points(loop_points,circle_points))
+  let(loop_faces = loop_faces(len(loop_points),sides,open))
+  poly(name="Knot",
+         vertices = tube_points,
+         faces = loop_faces);
+
+module braid (Paths,Depth,Kscale,Phase ) {
+  for (k =[0:len(Paths) - 1]) {
+     path = Paths[k];
+     spath=smooth(path,Depth);
+     knot= path_knot(spath,R,Sides,Kscale,Phase,false);
+     solid1=knot;  // apply transformations here
+     color(colours[k]) 
+     show_solid(solid1);
+ }
+};
+
+colours = ["red","green","blue","yellow","pink","orange","springgreen","cyan","thistle","silver"];
+           
+     ]]></pre>
+            </div>
+        </div>
+    </body>
+</html>
