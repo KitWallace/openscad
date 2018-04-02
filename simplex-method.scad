@@ -86,7 +86,7 @@ function f(x,P) = rosenbrock(x);
   
 Init=[[0,0],[0,1],[1,0]]; 
 P=[];
-x = simplex(P,simplex_values(Init));
+x = simplex(P,simplex_values(Init,P));
 echo(x);
 
     
