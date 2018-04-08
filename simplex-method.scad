@@ -1,7 +1,7 @@
 // basic functions
 
 function zero(v) =
-    len(v) == undef ? 0 : [for (i=[0:n-1]) 0];
+     len(v) == undef ? 0 : [for (i=[0:len(v)-1]) 0];
     
 function slice(v,d,i=0) =
      i < len(v) ?  concat([v[i][d]], slice(v,d,i+1) ) : [] ;
