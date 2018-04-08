@@ -1,8 +1,8 @@
 // basic functions
 
-function zero(n) =
-    n==1 ? 0 : [for (i=[0:n-1]) 0];
-   
+function zero(v) =
+    len(v) == undef ? 0 : [for (i=[0:n-1]) 0];
+    
 function slice(v,d,i=0) =
      i < len(v) ?  concat([v[i][d]], slice(v,d,i+1) ) : [] ;
 
@@ -10,7 +10,7 @@ function subseq(v,start,end) =
     [for (i=[0:len(v)-1]) if(i>= start && i <= end ) v[i]];
   
 function v_sum_r(v,n,k) =
-      k > n ? zero(len(v)) : v[k] + v_sum_r(v,n,k+1);
+      k > n ? zero(v[0]) : v[k] + v_sum_r(v,n,k+1);
 
 function v_sum(v,n) = v_sum_r(v,n-1,0);
 
