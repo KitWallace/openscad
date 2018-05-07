@@ -1,10 +1,5 @@
 use <tile_fns.scad>
 
-// http://archive.bridgesmathart.org/2009/bridges2009-243.pdf
-hex_1_peri = [120,60,240,60,120,120];
-
-// scale(20) fill_tile(peri_to_tile(hex_1_peri));
-
 function hex_2_peri(A) = 
     let (b=sin((180-A)/2) - sin(A/2))
     [[1,270-A/2],[b,90],[b,90+A/2],[1,180-A],[1,90+A/2],[b,90],[b,270-A/2],[1,A]];
