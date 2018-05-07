@@ -1,4 +1,4 @@
-use <tile_fns-a.scad>
+use <tile_fns.scad>
 
 t_sq = repeat([ 225,90,225,90],4);
 t_cross= repeat([ 270,135,90,135],4);
