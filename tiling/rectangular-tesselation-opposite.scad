@@ -9,7 +9,7 @@ t_base=peri_to_tile(p_base);
 side1 = [[2,300],[1,120],[1,120],[1,60],[1,240],[1,240],[1,120],[1,240],[1,300],[1,60],[2,90]];
 side2= [[2,240],[1,120],[1,120],[1,240],[2,90]];
 
-p_jigsaw =  modify_sides(p_base,[side1,side2,rmirror_side(side1),rmirror_side(side2)]);
+p_jigsaw =  replace_sides(p_base,[side1,side2,rmirror_side(side1),rmirror_side(side2)]);
 //peri_report(p_jigsaw);
 t_jigsaw=peri_to_tile(p_jigsaw);
 // scale(20) fill_tile(t_jigsaw);
