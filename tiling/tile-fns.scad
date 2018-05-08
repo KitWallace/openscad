@@ -293,7 +293,21 @@ function isSimple (peri) =
                1])
           ]))
      v_sum(v,len(v)) == 0;
-              
+
+function replace_sides(peri,sides) =
+ flatten( [for (i=[0:len(peri)-1])
+      let (bside = peri[i])
+      let (mside = sides[i])
+      let (mside_m = 
+              len(mside) >1 
+                 ? concat([for (i=[0:len(mside)-2]) mside[i]],[[mside[len(mside)-1][0],bside[1]]])
+                 : [[mside[0][0],bside[1]]]
+           )
+      let (mside_length = peri_error(mside_m))
+      let (mside_scaled = scale_peri(bside[0]/mside_length,mside_m))
+      mside_scaled
+  ]);
+  
 module peri_report(peri,name="Peri",eps=0.000001) {
    echo(" ");
   echo("Name",name);
