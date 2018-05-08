@@ -1,8 +1,8 @@
 use <tile_fns.scad>
 
-// rectangular opposing  tesselation
+//  parallelogram opposing  tesselation
 
-p_base=repeat([[10,90],[8,90]],2);
+p_base=repeat([[10,110],[8,70]],2);
 t_base=peri_to_tile(p_base);
 //peri_report(p_base);
 
