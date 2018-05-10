@@ -13,7 +13,7 @@ function flatten(l) = [ for (a = l) for (b = a) b ] ;
 function depth(a) =
    len(a)== undef 
        ? 0
-       : 1+depth(a[0]);
+       : 1 + depth(a[0]);
 
 function signx (x) =
      x==0 ? 1 : sign(x);
@@ -294,6 +294,7 @@ function isSimple (peri) =
           ]))
      v_sum(v,len(v)) == 0;
 
+
 function replace_sides(peri,sides) =
  flatten( [for (i=[0:len(peri)-1])
       let (bside = peri[i])
@@ -307,7 +308,7 @@ function replace_sides(peri,sides) =
       let (mside_scaled = scale_peri(bside[0]/mside_length,mside_m))
       mside_scaled
   ]);
-  
+ 
 module peri_report(peri,name="Peri",eps=0.000001) {
    echo(" ");
   echo("Name",name);
@@ -363,7 +364,8 @@ function mirror_tile(tile) =
 
 function rmirror_tile(tile) =
      reverse(mirror_tile(tile));
-     
+
+   
 /* function to test niceness of a tile
    max / min < pmin
    all angles > amin
@@ -382,7 +384,7 @@ module label_points(points) {
   }};
   
 module number_points(points,size=0.01) {
-  for (i=[0:len(points)-1]) {
+   for (i=[0:len(points)-1]) {
      label = chr(i + 48);
      translate(points[i])
       translate ([0,0,0.5])
@@ -391,6 +393,7 @@ module number_points(points,size=0.01) {
   
 module number_edges(points,size=0.01) { 
   //# edges <10
+   color("black")
   for (i=[0:len(points)-1]) {
      label = chr(i + 48);
      mid= (points[i] + points[(i+1) % len(points)])/2;
@@ -537,31 +540,67 @@ function group_tiles(tile,assembly,group=[],i=0) =
 // create list of transformations 
 //  apply the transformations
 
-
+// for a single tile
 function group_transforms(tile,assembly,group=[],transforms=[],i=0) =
     i==len(assembly)+1
         ? transforms
-        :  
-          i==0 
-           ? group_transforms(tile,assembly,[tile],[],i+1)
+        : i==0 
+           ? group_transforms(tile,assembly,[tile],[[0]],i+1)
            : let(move = assembly[i-1])
-             let(m=m_edge_to_edge(edge(tile,move[0]),edge(group[move[1]],move[2])))
+             let(source_tile=tile)
+             let(source_side=move[0])
+             let(target_tile=group[move[1]])
+             let(target_side=move[2])
+             let(mirror = len(move) == 4 ? 1 : 0)
+
+             let(m=m_edge_to_edge(edge(source_tile,source_side),edge(target_tile,target_side)))
              let(nt = 
-                   len(move)==4
-                       ?  copy_tile(mirror_tile(tile),m)
-                       :  copy_tile(tile,m)
+                   mirror
+                       ?  copy_tile(mirror_tile(source_tile),m)
+                       :  copy_tile(source_tile,m)
                        )
-             group_transforms(tile,assembly,concat(group,[nt]),concat(transforms,[m]),i+1);
-// doesnt handle mirror since thats not a transform 
-function apply_group_transforms(tile,transforms,group=[],i=0) =
-    i==len(transforms)+1
+             let(t=[0,m,mirror])
+             group_transforms(tile,assembly,concat(group,[nt]),concat(transforms,[t]),i+1);
+             
+function group_multiple_transforms(tiles,assembly,group=[],transforms=[],i=0) =
+    i==len(assembly)+1
+        ? transforms
+        : let(move = assembly[i-1])
+           len(move)== 1
+           ? group_multiple_transforms(tiles,assembly,[tiles[move[0]]],[[move[0]]],i+1) 
+           : let(source_tile=tiles[move[0]])
+             let(source_side=move[1])
+             let(target_tile=group[move[2]])
+             let(target_side=move[3])
+             let(mirror = len(move) == 5 ? 1 : 0)
+             let(m=m_edge_to_edge(edge(source_tile,source_side),edge(target_tile,target_side)))
+             let(nt = 
+                   mirror
+                       ?  copy_tile(mirror_tile(source_tile,m))
+                       :  copy_tile(source_tile,m)
+                       )
+             let(t=[move[0],m,mirror])
+             group_multiple_transforms(tiles,assembly,concat(group,[nt]),concat(transforms,[t]),i+1);
+
+
+function apply_group_transforms(t,transforms,group=[],i=0) =
+     let (tiles = depth(t) == 2  ?[t] : t)
+     i==len(transforms)
         ? group
-        : i==0
-           ?apply_group_transforms(tile,transforms,[tile],i+1)
-           :let (nt = copy_tile(tile,transforms[i-1]))
-            apply_group_transforms(tile,transforms,concat(group,[nt]),i+1);
+        : let(transform = transforms[i])
+          let(source_tile=tiles[transform[0]])
+           len(transform) == 1
+           ? apply_group_transforms(tiles,transforms,[source_tile],i+1)
+           : let (m=transform[1])
+             let (mirror = transform[2])
+             let(nt = 
+                   mirror
+                       ?  copy_tile(mirror_tile(source_tile,m))
+                       :  copy_tile(source_tile,m)
+                       )
+            apply_group_transforms(tiles,transforms,concat(group,[nt]),i+1);
             
-                
+           
 module group_report(group) {
      echo("No of Tiles",len(group));
     // add tests for tile overlap 
