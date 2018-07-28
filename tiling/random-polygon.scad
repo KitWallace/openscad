@@ -1,4 +1,4 @@
-peri = r_path(n=10,side=5,lp=30,ap=10);
+peri = r_path(n=6,side=5,lp=90,ap=90);
 peri_report(peri);
 fill_tile(centre_tile(peri_to_tile(peri)));
 
@@ -18,7 +18,7 @@ function r_path(n,side,lp=20,ap=20) =
    let(ln= p2[n-1][0])
    let(an= p2[n-1][1])
    let(an1= p2[n-2][1])
-   isConvex(p2) && isSimple(p2) 
+   isConvex(p2) && isSimple(p2) && isPolygon(p2)
               && (ln >= min_l) &&  (ln <= max_l)  
               && (an >= min_a) &&  (an <= max_a) 
               && (an1 >= min_a) &&  (an1 <= max_a) 
@@ -196,8 +196,8 @@ function total_external(peri) =
      let (eperi = int_to_ext(peri))
      v_sum(slice(eperi,1),len(eperi));
       
-function polygon(peri) =
-     total_external(peri) == 360;
+function isPolygon(peri,eps=0.001) =
+     abs(total_external(peri) - 360)< eps;
        
 function peri_to_tile(peri,last=false) = 
     let (p =turtle_path(peri_to_turtle_int(peri)))  
@@ -234,14 +234,15 @@ function isSimple (peri) =
           ]))
      v_sum(v,len(v)) == 0;
 
-
+function isComplete(peri,eps=0.001) = abs (total_external(peri) - 360) < eps;
+              
 module peri_report(peri,name="Peri",eps=0.000001) {
   echo(" ");
   echo("Name",name);
   echo("Perimeter",peri);
   echo("Sides",len(peri));
   echo("Convex",isConvex(peri));
-  echo("Complete",polygon(peri),total_external(peri));
+  echo("Complete",isPolygon(peri),total_external(peri));
   echo("Closed", peri_error(peri) < eps,peri_error(peri));
   echo("Simple", isSimple(peri));
 };   
