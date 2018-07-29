@@ -46,7 +46,42 @@ function angle_between(u, v) =
      let (a = acos(y))
      let (d = cross(u,v).z)
       d  > 0 ? a : 360- a;
-                  
+ // transformation matrices
+
+function m_translate(v) = [ [1, 0, 0, 0],
+                            [0, 1, 0, 0],
+                            [0, 0, 1, 0],
+                            [v.x, v.y, v.z, 1  ] ];
+                            
+function m_rotate(v) =  [ [1,  0,         0,        0],
+                          [0,  cos(v.x),  sin(v.x), 0],
+                          [0, -sin(v.x),  cos(v.x), 0],
+                          [0,  0,         0,        1] ]
+                      * [ [ cos(v.y), 0,  -sin(v.y), 0],
+                          [0,         1,  0,        0],
+                          [ sin(v.y), 0,  cos(v.y), 0],
+                          [0,         0,  0,        1] ]
+                      * [ [ cos(v.z),  sin(v.z), 0, 0],
+                          [-sin(v.z),  cos(v.z), 0, 0],
+                          [ 0,         0,        1, 0],
+                          [ 0,         0,        0, 1] ];
+ 
+function m_scale(v,s) =
+     depth(v)==2
+      	? [ [v[0],0,0,0],
+	        [0,v[1],0,0],
+	        [0,0,v[2],0],
+	        [0,0,0,1]
+          ]
+        : [ [v,0,0,0],
+	        [0,v,0,0],
+	        [0,0,v,0],
+	        [0,0,0,1]
+          ];
+          
+function vec3(v) = [v.x, v.y, v.z];
+function transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
+
 
 // vector operations 
 function zero(v) =
