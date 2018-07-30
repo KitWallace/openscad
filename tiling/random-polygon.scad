@@ -8,8 +8,7 @@ length_random_pc=40;
 // % randomness in interior angle
 angle_random_pc=20;
 // tolerance to rounding errors
-eps=0.05;
-
+eps=0;
 //  angles 
 
 function angle_between(u, v) = 
