@@ -100,8 +100,9 @@ function random_peri(n,side,lp,ap) =
    let(ar = angle * ap/100)
    let (p1 =
     [for (i=[0:n-2])
-        [side + rs[i]*lr, 
-         angle + rs[i+n]*ar]
+        [max(side + rs[i]*lr,0), 
+         max(angle + rs[i+n]*ar,0)
+        ]
     ])
    let(p2 = tile_to_peri(peri_to_tile(p1,true)))  // close the polygon
    let(ln= p2[n-1][0])
