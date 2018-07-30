@@ -3,7 +3,7 @@
 n=5;
 // average length of side
 side=10;
-// % randomness in lenght of side
+// % randomness in length of side
 length_random_pc=20;
 // % randomness in interior angle
 angle_random_pc=0;
