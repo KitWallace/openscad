@@ -1,14 +1,14 @@
 //  kit wallace random polygon
 // number of sides 
-n=5;
+n=6;
 // average length of side
 side=10;
 // % randomness in length of side
-length_random_pc=20;
+length_random_pc=10;
 // % randomness in interior angle
-angle_random_pc=0;
+angle_random_pc=60;
 // tolerance to rounding errors
-eps=0;
+eps=0.05;
 
 //  angles 
 
@@ -62,7 +62,13 @@ function peri_to_tile(peri,last=false) =
     last 
        ? [for (i=[0:len(p)-1]) p[i]] 
        : [for (i=[0:len(p)-2]) p[i]]; 
-     
+
+
+function isConvex(peri,i=0) =
+   i < len(peri)
+     ? peri[i][1] > 0  && peri[i][1] < 180  && peri[i][0] > 0 && isConvex(peri,i+1)
+     : true;     
+       
 // tile operations
     
 function tile_to_peri(points) =
@@ -96,6 +102,7 @@ function random_peri(n,side,lp,ap) =
    let(ln= p2[n-1][0])
    let(an= p2[n-1][1])
    let(an1= p2[n-2][1])
+   isConvex(p2) &&
        abs (ln - side) < lr + eps  
        && abs (an - angle) < ar + eps  
        && abs (an1 - angle) < ar + eps  
