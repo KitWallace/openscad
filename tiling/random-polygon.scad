@@ -8,7 +8,7 @@ length_random_pc=20;
 // % randomness in interior angle
 angle_random_pc=0;
 // tolerance to rounding errors
-eps=0.01;
+eps=0;
 
 //  angles 
 
