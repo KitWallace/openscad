@@ -8,7 +8,7 @@ length_random_pc=20;
 // % randomness in interior angle
 angle_random_pc=0;
 // tolerance to rounding errors
-eps=0.05;
+eps=0.01;
 
 //  angles 
 
@@ -82,7 +82,7 @@ module fill_tile(tile,color="red") {
        polygon(3d_to_2d(tile)); 
 };
 
-function random_peri(n,side,lp,ap,eps=0.05) =
+function random_peri(n,side,lp,ap) =
    let(rs = rands(-1,1,2*n))
    let(lr= side * lp/100 )
    let(angle = 180 - 360 /n)
@@ -96,16 +96,18 @@ function random_peri(n,side,lp,ap,eps=0.05) =
    let(ln= p2[n-1][0])
    let(an= p2[n-1][1])
    let(an1= p2[n-2][1])
-       abs (ln - side) < lr +eps  
-       && abs (an - angle) < ar +eps  
-       && abs (an1 - angle) < ar +eps  
+       abs (ln - side) < lr + eps  
+       && abs (an - angle) < ar + eps  
+       && abs (an1 - angle) < ar + eps  
        ? p2
        : random_peri(n,side,lp,ap)
   ;
 
 // main
      
-peri = random_peri(n=n,side=side,lp=length_random_pc,ap=angle_random_pc,eps=eps);
+peri = random_peri(n=n,side=side,lp=length_random_pc,ap=angle_random_pc);
+echo(peri);
 tile= peri_to_tile(peri);
 fill_tile(tile);
 echo(tile);
+
