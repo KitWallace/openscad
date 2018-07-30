@@ -6,7 +6,7 @@ side=10;
 // % randomness in length of side
 length_random_pc=40;
 // % randomness in interior angle
-angle_random_pc=200;
+angle_random_pc=20;
 // tolerance to rounding errors
 eps=0.05;
 
