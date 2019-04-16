@@ -15,7 +15,7 @@ base_height=2;
 // truchet height
 truchet_height=2;
 // line width
-line_width=2;
+line_width=3;
 
 module plain_tile() {
     square([1,1]);
@@ -85,13 +85,13 @@ module truchet(size,d,h) {
                 square([size,size]);
                 union() {
                  difference() {
-                    circle(r=size/2+line_width);
-                    circle(r=size/2-line_width); 
+                    circle(r=size/2+line_width/2);
+                    circle(r=size/2-line_width/2); 
                  }
                  translate([size,size]) 
                    difference() {
-                      circle(r=size/2+line_width);
-                      circle(r=size/2-line_width); 
+                      circle(r=size/2+line_width/2);
+                      circle(r=size/2-line_width/2); 
                  }
                }
            }                    
@@ -99,7 +99,7 @@ module truchet(size,d,h) {
 
 function random_tiles(N,M,i=0,tiles=[]) =
    len(tiles) < N*M
-      ? let(k=floor(rands(0,4,1)[0]))
+      ? let(k=floor(rands(0,2,1)[0]))
         
         random_tiles(N,M,i+1,concat(tiles,k))
       : tiles;
@@ -109,12 +109,6 @@ module truchet_tile(size,d,h,form) {
       truchet(size,d,h);
    else if (form==1)
       rotate([0,0,90])
-         truchet(size,d,h);
-   else if (form==2)
-      rotate([0,0,180])
-         truchet(size,d,h);
-   else if (form==3)           
-      rotate([0,0,270])
          truchet(size,d,h);
 }
 
