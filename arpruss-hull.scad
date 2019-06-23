@@ -244,6 +244,12 @@ module dualHull(points) {
     linearConstraintShape(constraints);
 }
 
+function dualHull_tri(points) =
+    let(p = hullPoints(points))
+    let(constraints = [for(v=p) [v,v*v]])
+    let (points=_linearConstraintExtrema(constraints))
+    _makePointsAndFaces(pointHull3D(points));
+    
 function dualHull(points) =
     let(p = hullPoints(points))
     let(constraints = [for(v=p) [v,v*v]])
