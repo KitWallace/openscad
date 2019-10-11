@@ -1,7 +1,7 @@
 use <../lib/tile_fns.scad>
 
 /* 
- 7-rep tile
+ 7-rep-tile, Gosper Island
   based on a hexagon
   see http://mathafou.free.fr/pbm_en/sol218.html
    https://archive.bridgesmathart.org/2015/bridges2015-423.pdf  
@@ -9,7 +9,7 @@ Kit Wallace 2019-10-04
 */
 
 k=1;  //order of rep
-inset=-0.02; // expand slighly to counter laser kerf
+inset=-0.1; // expand slighly to counter laser kerf
 width=40;
     
 function lr_to_peri(f) =
