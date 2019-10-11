@@ -2,7 +2,7 @@ use <../lib/tile_fns.scad>
 
 /* 
  5-rep tile
- 
+  based on square
   see http://mathafou.free.fr/pbm_en/sol218.html
    https://archive.bridgesmathart.org/2015/bridges2015-423.pdf  
 Kit Wallace 2019-10-04
@@ -15,7 +15,7 @@ width=40;
 function lr_to_peri(f) =
   [for (i=[0:len(f)-1])
       let(d=f[i])
-      [1,d=="R"? 270: d=="L"? 90 : 0]
+      [1,d=="L"? 90: d=="R"? -90 : 0]
   ];
 
 function reverse_last(s) =
