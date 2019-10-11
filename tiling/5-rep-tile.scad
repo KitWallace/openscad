@@ -9,7 +9,7 @@ Kit Wallace 2019-10-04
 */
 
 k=1;  //order of rep
-inset=-0.02; // expand slighly to counter laser kerf
+inset=-0.1; // expand slighly to counter laser kerf
 width=40;
     
 function lr_to_peri(f) =
