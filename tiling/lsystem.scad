@@ -75,7 +75,6 @@ module path(points,width,closed=false) {
    1 - axiom
    2 - rules
    3 - angle in degrees
-   4 - max depth supported
 */
 curves =[
    ["Dragon",
@@ -171,7 +170,7 @@ for (i=[0:len( curves)-1])
 ci=0;
 curve=curves[ci];
 echo(curve);
-k=13;
+k=9;
 sentence=gen(curve[1],curve[2],k);
 angle =curve[3];
 //echo(sentence);
