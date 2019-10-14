@@ -5,7 +5,7 @@
        F,A,B forward step
        + turn right angle
        - turn left angle
-       other symbols are ignored
+       other symbols are ignored when executing
        
   see http://paulbourke.net/fractals/lsys/ 
     for a plethora of examples
