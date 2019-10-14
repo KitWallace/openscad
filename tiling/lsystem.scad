@@ -70,6 +70,7 @@ module path(points,r,closed=false) {
    1 - axiom
    2 - rules
    3 - angle in degrees
+   4 - max depth supported
 */
 curves =[
    ["Dragon",
@@ -78,7 +79,8 @@ curves =[
      ["X","X+YF+"],
      ["Y","-FX-Y"]
    ],
-   90],
+   90,
+    9],
 
    ["Moore",
     "LFL+F+LFL",
@@ -86,7 +88,8 @@ curves =[
      ["L","-RF+LFL+FR-"],
      ["R","+LF-RFR-FL+"]
     ],
-    90],
+    90,
+    3],
     
     ["Sierpinski Arrowhead",
      "A",
@@ -94,7 +97,8 @@ curves =[
        ["A", "B-A-B"],
        ["B","A+B+A"]
      ],
-    60],
+    60,
+    6],
     
     ["Hilbert",
      "X",
@@ -102,7 +106,8 @@ curves =[
        ["X","-YF+XFX+FY-"],
        ["Y","+XF-YFY-FX+"]
      ],
-     90],
+     90,
+     4],
      
      ["Peano-Gosper",
       "A",
@@ -110,7 +115,8 @@ curves =[
        ["A","A-B--B+A++AA+B-"],
        ["B","+A-BB--B-A++A+B"]
       ],
-     60],
+     60,
+     3],
     
      ["Sierpinski triangle",
       "A-B-B",
@@ -118,7 +124,8 @@ curves =[
         ["A","A-B+A+B-A"],
         ["B","BB"]
       ],
-      120],
+      120,
+      5],
       
       ["Peano",
        "X",
@@ -126,53 +133,61 @@ curves =[
         ["X","XFYFX+F+YFXFY-F-XFYFX"],
         ["Y","YFXFY-F-XFYFX+F+YFXFY"]
        ],
-       90],
+       90,
+       3],
  
       ["Koch snowflake",
        "F++F++F",
        [["F","F-F++F-F"]],
-       60],
+       60,
+       4],
 
        ["Square Sierpinski", 
         "F+XF+F+XF",
         [["X","XF-F+F-XF+F+XF-F+F-X"]],
-       90],
+       90,
+       4],
 
       ["Cesaro fractal",
        "F",
        [["F","F+F--F+F"]],
-       85],
+       85,
+       5],
        
       ["Paul Bourke 1",
        "F+F+F+F+",
        [["F","F+F-F-FF+F+F-F"]],
-       90],
+       90,
+       2],
        
        ["Paul Bourke Triangle",
         "F+F+F",
         [["F","F-F+F"]],
-        120],
+        120,
+        5],
         
         ["Paul Bourke Crystal",
          "F+F+F+F",
          [["F","FF+F++F+F"]],
-        90]
+        90,
+        3]
    ];
 
 for (i=[0:len( curves)-1])
     echo(i,curves[i][0]); 
 
-ci=0;
-k=9;
+ci=12;
 curve=curves[ci];
 echo(curve);
+k=curve[4];
+
 sentence =gen(curve[1],curve[2],k);
 angle =curve[3];
 //echo(sentence);
 echo("k",k);
 echo("sentence length",len(sentence));
 $fn=12;
-width=0.1;
+width=0.05;
 scale= 100;
 points = string_to_points(sentence,step=1,angle=angle);
 //echo(points);
