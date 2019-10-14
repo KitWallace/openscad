@@ -167,18 +167,23 @@ curves =[
 for (i=[0:len( curves)-1])
     echo(i,curves[i][0]); 
 
-ci=0;
+
+ci=3;
+k=5;
+
+width=0.2;
+scale= 1;
+
+$fn=12;
 curve=curves[ci];
 echo(curve);
-k=9;
 sentence=gen(curve[1],curve[2],k);
 angle =curve[3];
 //echo(sentence);
 echo("k",k);
 echo("sentence length",len(sentence));
-$fn=12;
-width=0.08;
-scale= 3;
+
+
 points = string_to_points(sentence,step=1,angle=angle);
 //echo(points);
 echo("curve length", len(points)-1);
