@@ -52,10 +52,12 @@ function string_to_points(s,step=1,angle=90,pos=[0,0],dir=0) =
   
         if(i==len(s)) each ps ];
           
-      
+// workaround to avoid range limit         
+function to_n(n) = [for (i=0;i<=n;i=i+1) i];
+          
 module path(points,width,closed=false) {
    r=width/2;
-   for (i=[0:len(points)-2]) {
+   for (i=to_n(len(points-2)) {
       hull() {    
           translate(points[i]) circle(r);
           translate(points[i+1]) circle(r);
