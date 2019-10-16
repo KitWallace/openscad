@@ -109,7 +109,7 @@ curves =[
      ],
      90],
      
-     ["Peano-Gosper",
+   ["Peano-Gosper",
       "A",
      [
        ["A","A-B--B+A++AA+B-"],
@@ -117,7 +117,7 @@ curves =[
       ],
      60],
     
-     ["Sierpinski triangle",
+   ["Sierpinski triangle",
       "A-B-B",
       [
         ["A","A-B+A+B-A"],
@@ -125,7 +125,7 @@ curves =[
       ],
       120],
       
-      ["Peano",
+   ["Peano",
        "X",
        [
         ["X","XFYFX+F+YFXFY-F-XFYFX"],
@@ -133,35 +133,61 @@ curves =[
        ],
        90],
  
-      ["Koch snowflake",
+   ["Koch snowflake",
        "F++F++F",
        [["F","F-F++F-F"]],
        60],
 
-       ["Square Sierpinski", 
+   ["Square Sierpinski", 
         "F+XF+F+XF",
         [["X","XF-F+F-XF+F+XF-F+F-X"]],
        90],
 
-      ["Cesaro fractal",
+   ["Cesaro fractal",
        "F",
        [["F","F+F--F+F"]],
        85],
        
-      ["Paul Bourke 1",
+   ["Paul Bourke 1",
        "F+F+F+F+",
        [["F","F+F-F-FF+F+F-F"]],
        90],
        
-       ["Paul Bourke Triangle",
+   ["Paul Bourke Triangle",
         "F+F+F",
         [["F","F-F+F"]],
         120],
         
-        ["Paul Bourke Crystal",
+   ["Paul Bourke Crystal",
          "F+F+F+F",
          [["F","FF+F++F+F"]],
-        90]
+        90],
+        
+   ["Levy Curve",
+         "F",
+         [["F","-F++F-"]],
+         45],
+         
+   ["5-rep-tile",
+      "F-F-F-F-",
+      [["F","F+F-F"]],
+      90
+    ],
+   
+   ["7-rep-tile",
+      "F-F-F-F-F-F-",
+      [["F","F+F-F"]],
+      60
+    ],
+    
+   ["Kolem",
+   "--D--D",
+   [["X","F++FFFF--F--FFFF++F++FFFF--F"],
+    ["Y","F--FFFF++F++FFFF--F--FFFF++F"],
+    ["C","YFX--YFX"],
+    ["D","CFC--CFC"]],
+    45
+   ]
    ];
 
 for (i=[0:len( curves)-1])
