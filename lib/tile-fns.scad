@@ -2,20 +2,23 @@
 /*
 Tiling functions
 
+To do
+
 - reduction of tiles to  a vertex/edge structure - for export to SVG at least
 - unclear which functions work on internal angles (should be all now except where notes
     and on normalised (ie with lengths and angles not just angles - better word needed
     
--unclear which functions handled nested tile sequences
+- unclear which functions handled nested tile sequences
 
--inset_tile has problems
+- unclear which function swork with 2d and 3d points 
+- inset_tile has problems
 
 */
 // basic functions
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
 
 function depth(a) =
-   len(a)== undef 
+   a[0]== undef 
        ? 0
        : 1 + depth(a[0]);
 
@@ -56,7 +59,20 @@ function m_rotate(v) =  [ [1,  0,         0,        0],
                           [-sin(v.z),  cos(v.z), 0, 0],
                           [ 0,         0,        1, 0],
                           [ 0,         0,        0, 1] ];
- 
+
+function m_scale(v,s) =
+     depth(v)==2
+      	? [ [v[0],0,0,0],
+	        [0,v[1],0,0],
+	        [0,0,v[2],0],
+	        [0,0,0,1]
+          ]
+        : [ [v,0,0,0],
+	        [0,v,0,0],
+	        [0,0,v,0],
+	        [0,0,0,1]
+          ];
+          
 step=0.2;
           
 function vec3(v) = [v.x, v.y, v.z];
@@ -64,7 +80,7 @@ function transform(v, m)  = vec3([v.x, v.y, v.z, 1] * m);
 
 // vector operations 
 function zero(v) =
-    len(v) == undef ? 0 : [for (i=[0:len(v)-1]) 0];
+    v[0] == undef ? 0 : [for (i=[0:len(v)-1]) 0];
    
 function slice(v,d,i=0) =
      i < len(v) ?  concat([v[i][d]], slice(v,d,i+1) ) : [] ;
@@ -123,8 +139,10 @@ function quicksort1(arr,col=0) =
       concat( quicksort1(lesser), equal, quicksort1(greater) );  
             
 function v_scale(v,scale) =
-    let(m=m_scale(scale))
-    [for (p=v) transform(p,m) ];
+    scale[0] == undef 
+      ? [for (p=v) p*scale ]
+      : let(m=m_scale(scale))
+        [for (p=v) transform(p,m) ];
 
 function v_rotate(v,angle) =
     let(m=m_rotate([0,0,angle]))
@@ -133,18 +151,19 @@ function v_rotate(v,angle) =
 function v_translate(v,d) =
     let(m=m_translate(d))
     [for (p=v) transform(p,m)];
-        
-    
-// this is clearly wrong
-    
+          
 function bounding_box(points) =
-    [[max(slice(points,0))- min(slice(points,0)),min(slice(points,0)), max(slice(points,0)),
+let (b=[min(slice(points,0)),
+     max(slice(points,0)),
+     min(slice(points,1)),
+     max(slice(points,1))])
+     [ [b[0],b[3],0],
+       [b[0],b[2],0],
+       [b[1],b[2],0],
+       [b[1],b[3],0]  
+      ];  
 
-        min([for (p=points) p.x <0  ? -p.x:9999999]) ,
-        max([for (p=points) p.x>0 ? p.x:0])   ], 
-     [max(slice(points,1))- min(slice(points,1)),min(slice(points,1)), max(slice(points,1))]
-    ];  
-        
+   
 function 3d_to_2d(points)=
     [ for (p=points) [p.x,p.y]];
         
@@ -227,11 +246,11 @@ function convex(peri,i=0) =
      : true;
 
 function total_internal(peri) =
-     v_sum(slice(peri,1),len(peri));
+     v_sum(slice(peri,1));
 
 function total_external(peri) =
      let (eperi = int_to_ext(peri))
-     v_sum(slice(eperi,1),len(eperi));
+     v_sum(slice(eperi,1));
       
 function polygon(peri) =
      total_external(peri) == 360;
@@ -286,7 +305,7 @@ function isSimple (peri) =
               if( isIntersecting(t[i],t[(i+1)%len(t)],t[j],t[(j+1)%len(t)]))
                1])
           ]))
-     v_sum(v,len(v)) == 0;
+     v_sum(v) == 0;
 
        
 function isPolygon(peri) =
@@ -388,7 +407,11 @@ function rotate_tile(t,a) = v_rotate(t,a);
 function centre_tile(t) =
     let(c = v_avg(t))
     translate_tile(t,-c);
-      
+
+function origin_tile(t) =
+    let(box=bounding_box(t))
+    translate_tile(t,-box[1]);
+     
 function triangle(a,b) = norm(cross(a,b))/2;
 
 function tile_area(tile) =
@@ -537,14 +560,10 @@ module fill_tile(tile,col="red") {
        polygon(3d_to_2d(tile)); 
 };
 
-
-
-
-
-
 module fill_tiles (tiles,colors) {
     fill_group (tiles,colors);
 };
+
 module fill_group (group,colors=["lightgreen"]) {
     for (i=[0:len(group)-1]) {
        colors = colors[i % len(colors)];
@@ -638,7 +657,7 @@ function group_transforms(tiles,assembly,group=[],transforms=[],i=0) =
                let (dest_tile=group[dest_i])
                let (dest_side=dest[1])
                let (end = len(dest)==3 ? 1 : 0)
-               let (m = m_edge_to_edge(edge(source_tile,source_side),edge(dest_tile,dest_side,end)))
+               let (m = m_edge_to_edge(edge(source_tile,source_side),edge(dest_tile,dest_side),end))
                let (nt = copy_tile(source_tile,m))
                let (t= [source_i,m,mirror])
                group_transforms(tiles,assembly,concat(group,[nt]),concat(transforms,[t]),i+1);
@@ -662,6 +681,18 @@ function tesselate_tiles(tiles,n,m,dx,dy) =
     [ for (j=[0:m-1])
       for (i=[0:n-1])
       let(trans= i*dx+j*dy)
+      [for (t=tiles)
+          translate_tile(t,trans)
+      ]
+    ];
+// tesselate one or more tiles
+// offset to counter diagonal in positive xy quadrant
+      
+function tesselate_tiles_offset(tiles,n,m,dx,dy) =
+    [ for (j=[0:m-1])
+      let(rj=(j%2==0)?j/2:(j-1)/2)
+      for (i=[0:n-1])
+      let(trans= (i+rj)*dx+j*dy)
       [for (t=tiles)
           translate_tile(t,trans)
       ]
