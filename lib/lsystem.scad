@@ -1,7 +1,7 @@
 /*
   L-system (Lindenmayer) 
     symbols  
-       F,A,B forward step
+       F (or user defined characters) forward step
        + turn right angle
        - turn left angle
        other symbols are ignored
@@ -24,6 +24,8 @@
 function find(key, list) =
       list[search([key],list)[0]]  ;
 
+function is_key(key,list)= search([key],list) != undef;
+
 function join(l,s="",i=0) =
    i <len(l) 
       ? join(l,str(s,l[i]),i+1)
@@ -38,24 +40,23 @@ function replace(s,rules) =
 function gen(s,rules,k) =
     k==0? s : gen(replace(s,rules),rules,k-1);
 
-function string_to_points(s,step=[1],angle=90,pos=[0,0],dir=0) =
+function string_to_points(s,step=1,angle=90,pos=[0,0,0],dir=0,forward) =
+  let(fchars = forward==undef ? ["F"] : forward)
   [for( i  = 0,
         ps = [pos];
 
         i <= len(s);
 
         c   = s[i],
-        pos = c=="F" ||c=="A" || c=="B"
-               ? pos + step[0]*[cos(dir), sin(dir)]
-               : c=="f"
-                   ? pos + step[1]*[cos(dir), sin(dir)]
-                   : pos,
+        pos = is_key(c,fchars)
+               ? pos + step*[cos(dir), sin(dir),0]
+               : pos,
         dir = c=="+"  
               ? dir + angle
               : c=="-"
                 ? dir - angle
                 : dir,
-        ps  = c=="F" ||c=="A" || c=="B" || c== "f"
+        ps  = is_key(c,fchars) 
                ? concat([pos], ps) : ps,
         i   = i+1 )
   
@@ -92,6 +93,7 @@ module tile(points) {
    1 - axiom
    2 - rules
    3 - angle in degrees
+   4 - forward characters - default F
 */
 curves =
 
@@ -107,7 +109,9 @@ curves =
    ["Dragon curve -simpler form",
      "F",
     [["F", "F-A"],["A","F+A"]],
-     90],
+     90,
+     ["F","A"]
+   ],
              
    ["Twin Dragon",
    "FX+FX+",
@@ -129,7 +133,8 @@ curves =
     [["A","A+B"],
      ["B","A-B"]
      ],
-     60
+     60,
+     ["A","B"]
      ],
      
    ["McWorter's Pentigree",
@@ -168,7 +173,9 @@ curves =
        ["A","A-B--B+A++AA+B-"],
        ["B","+A-BB--B-A++A+B"]
       ],
-     60],
+     60,
+     ["A","B"]
+    ],
         
    ["Peano",
        "X",
@@ -177,17 +184,7 @@ curves =
         ["Y","YFXFY-F-XFYFX+F+YFXFY"]
        ],
        90],
-       
-    ["Peano Curved",
-       "X",
-       [
-        ["X","XFYFXRFRYFXFYLFLXFYFX"],
-        ["Y","YFXFYLFLXFYFXRFRYFXFY"],
-        ["R","F+F+F+F+"],
-        ["L","F-F-F-F-"]
-       ],
-       22.5],
-        
+              
    ["Sierpinski curve",
          "F--XF--F--XF",
          [["X", "XF+F+XF--F--XF+F+X"]],
@@ -199,7 +196,8 @@ curves =
        ["A", "B-A-B"],
        ["B","A+B+A"]
      ],
-    60],
+    60,
+     ["A","B"]],
         
    ["Sierpinski triangle",
       "A-B-B",
@@ -207,7 +205,8 @@ curves =
         ["A","A-B+A+B-A"],
         ["B","BB"]
       ],
-    120],
+    120,
+     ["A","B"]],
 
    ["Square Sierpinski", 
         "F+XF+F+XF",
