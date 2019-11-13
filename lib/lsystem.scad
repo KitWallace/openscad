@@ -4,7 +4,7 @@
        F (or user defined characters) forward step
        + turn right angle
        - turn left angle
-       other symbols are ignored
+       other symbols are ignored when rendering path
        
   see http://paulbourke.net/fractals/lsys/ 
     for a plethora of examples
