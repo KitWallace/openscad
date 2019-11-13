@@ -1,5 +1,5 @@
 // create layers to be laser cut in perspex to make a knot-shaped space to be filled with liquid
-// knot here is the symetric form of the figure 8 knot whose functional form comes from Henry Segerman
+// this knot is the symmetric figure 8 knot via Henry Segerman
 // Nov 2019
 
 // create a tube as a polyhedron 
@@ -130,19 +130,19 @@ function path_segment(path,start,end) =
     [for (i=[s:e]) path[i]];
 
 
-function scale(path,scale,i=0) =
-    i < len(path)
-      ?  concat( 
-           [[path[i][0]*scale[0],path[i][1]*scale[1],path[i][2]*scale[2]]], 
-           scale(path,scale,i+1)
-         )
-      :  [];
-
-function curve_length(step,t=0) =
-    t < 360
-      ?  norm(f(t+step) - f(t)) + curve_length(step,t+step)
-      :  0;
-
+function scale(points,scale,i=0) =
+     [for (p=points)
+       [p[0]*scale[0],p[1]*scale[1],p[2]*scale[2]], 
+     ];
+   
+function slice(points,d) =
+     [for (p=points) p[d]] ;
+    
+function dimensions(points)=
+    [for (d=[0:2])    
+     max(slice(points,d))- min(slice(points,d))
+    ];
+    
 function map(t, min, max) =
       min + t* (max-min)/360;
     
@@ -175,17 +175,21 @@ function f(t) =
 Scale=40;
 Sides=50;  // Sides of rope - must be a divisor of 360
 KPhase = 45;  // phase angle for profile (maters for low Sides
-Kscale=[1,1,1];  // x,y,z scaling
-R=0.26;   // Rope diameter
+Kscale=[1,1,1]*Scale;  // x,y,z scaling
+R=10;   // Rope diameter
 Step=2 ;  // decrease for finer details
 Open = false;   // true if knot is open or partial
 Start=0; End=360;  // change for partial path
-Path = loop_points(Step,Start,End);
+path = loop_points(Step,Start,End);
+knot= path_knot(path,R,Sides,Kscale,KPhase,Open); 
+echo(dimensions(p_vertices(knot)));
+// show_solid(knot);
+ 
 
 // this part does the layer creation, with 4 holes for the securing bolts, a notch which slants up the side to guide the layers, a second notch to ensure the layer has the right orientation
 
 thickness=3.16;  // of acrylic
-height=105;  // of stack, including top and bottom layers
+height=100;  // of stack, including top and bottom layers
 layers = floor(height/thickness); // no of layers needed
 echo(layers);
 
@@ -200,18 +204,15 @@ hole_radius=hole_diameter/2;  // hole radius
 notch_side=2;
 
 // layer
-layer=31; // 0 to layers -1
-
-translate([200,200,0]) //position of centre in laser bed
+layer=30; // 0 to layers -1
+offset = -height/2 +thickness*layer;
+echo(offset);
+//translate([200,200,0]) //position of centre in laser bed
 difference() {
    square(side,center=true);
-   knot= path_knot(Path,R,Sides,Kscale,KPhase,Open); 
-   solid1=knot;  // apply transformations here
-      projection(cut=true) 
-         translate([0,0,-thickness*layer]) 
-             scale(Scale)
-                translate([0,0,1.25])
-                  show_solid(solid1);
+   projection(cut=true) 
+         translate([0,0,offset]) 
+            show_solid(knot);
 // holes for clamping bolts
    translate([hole_d,hole_d,0])circle(hole_radius,$fn=20);
    translate([-hole_d,hole_d,0])circle(hole_radius,$fn=20);
