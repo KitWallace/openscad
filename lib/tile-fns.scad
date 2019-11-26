@@ -342,6 +342,10 @@ function replace_sides(peri,sides) =
       mside_scaled
   ]);
 
+function tabbed_tile(tile,tab)  =
+  let(aperi=tile_to_peri(tile))
+  let(tperi=replace_sides(aperi,[tab]))
+  peri_to_tile(tperi);
 
 function random_peri(n,min_length,max_length,min_angle,max_angle) =
    let (p1 =
@@ -398,6 +402,9 @@ function path_error(points) =
 function close(points)= concat(points,[[0,0,0]]); 
   
 function scale_tile(tile,scale) = v_scale(tile,scale);
+
+function scale_tiles(tiles,scale) = 
+  [ for (tile = tiles) v_scale(tile,scale)];
 
 function translate_tile(t,d) =
       [for (p=t) p+d]; 
@@ -843,7 +850,6 @@ module repeat_tile(n,m,dx,dy) {
                children();
       }
 }
-
 
 function interpolate(t,range) =
      let(r= range[1]- range[0])
