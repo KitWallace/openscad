@@ -779,9 +779,11 @@ function rcopy_group(group,m,n) =
        let (t = transform_tiles(group,m))
        concat(group,rcopy_group(t,m,n-1))
        : group;  
- 
-function group_to_tile(g) =
-    let (outer_edges = outer(g))
+
+// convert a set of tiles into one tile representing their boundary
+
+function tiles_to_tile(tiles) =
+    let (outer_edges = outer(tiles))
     let (points = edges_to_points(connect_edges(outer_edges)))
     let (peri = simplify(tile_to_peri(points)))
     peri_to_tile(peri);
@@ -793,17 +795,13 @@ module fill_tile(tile,col="red") {
        polygon(3d_to_2d(tile)); 
 };
 
-module fill_tiles (tiles,colors=["red"]) {
-    fill_group (tiles,colors);
-};
-
-module fill_group (group,colors=["lightgreen"]) {
-    for (i=[0:len(group)-1]) {
+module fill_tiles (tiles,colors=["lightgreen"]) {
+    for (i=[0:len(tiles)-1]) {
        colors = colors[i % len(colors)];
-       g=group[i];  
-        if(depth(g)==2)
-            fill_tile(g,colors); 
-       else fill_group(g,[colors]);          
+       t=tiles[i];  
+        if(depth(t)==2)
+            fill_tile(t,colors); 
+       else fill_tiles(t,[colors]);          
    }
 }
 module fill_group_shape (group,colors=["lightgreen"]) {
