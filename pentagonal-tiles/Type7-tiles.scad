@@ -60,6 +60,5 @@ let(assembly=[
 let(unit=group_tiles([tile],assembly))
 let(dx=-tile_offset(unit,[0,3],[3,2]))
 let(dy=tile_offset(unit,[4,3],[0,1]))
-let(tiles= tesselate_tiles(unit,n,m,dx,dy))
-centre_group(flatten(tiles));
+tesselate_tiles(unit,n,m,dx,dy);
 
