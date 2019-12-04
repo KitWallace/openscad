@@ -4,7 +4,7 @@
        F (or user defined characters) forward step
        + turn right angle
        - turn left angle
-       other symbols are ignored when rendering path
+       other symbols are ignored when rendering
        
   see http://paulbourke.net/fractals/lsys/ 
     for a plethora of examples
@@ -24,23 +24,23 @@
 function find(key, list) =
       list[search([key],list)[0]]  ;
 
-function is_key(key,list)= search([key],list) != undef;
+function is_key(key,list)= find(key,list) != undef;
 
-function join(l,s="",i=0) =
-   i <len(l) 
-      ? join(l,str(s,l[i]),i+1)
+function rstr(list,i=0,s="") =
+   i < len(list)
+      ? rstr(list,i+1,str(s,list[i]))
       : s;
       
 function replace(s,rules) =
-   join([for (c = s)
+   rstr([for (c = s)
       let(r=find(c,rules)[1])
       r==undef ? c : r
    ]);
       
-function gen(s,rules,k) =
-    k==0? s : gen(replace(s,rules),rules,k-1);
+function gen(axiom,rules,k) =
+    k==0? axiom : gen(replace(axiom,rules),rules,k-1);
 
-function string_to_points(s,step=1,angle=90,pos=[0,0,0],dir=0,forward) =
+function string_to_points(s,step=1,angle=90,pos=[0,0,0],dir=0,forward=["F"]) =
   let(fchars = forward==undef ? ["F"] : forward)
   [for( i  = 0,
         ps = [pos];
@@ -113,7 +113,7 @@ curves =
      ["F","A"]
    ],
              
-   ["Twin Dragon",
+   ["Twin dragon",
    "FX+FX+",
    [
      ["X","X+YF"],
@@ -208,7 +208,7 @@ curves =
     120,
      ["A","B"]],
 
-   ["Square Sierpinski", 
+   ["Sierpinski square", 
         "F+XF+F+XF",
         [["X","XF-F+F-XF+F+XF-F+F-X"]],
        90],
@@ -295,7 +295,7 @@ curves =
      60
      ],
          
-   ["5-rep-tile, Gosper Island",
+   ["5-rep-tile",
       "F-F-F-F-",
       [["F","F+F-F"]],
       90
@@ -335,7 +335,15 @@ curves =
    ];
    
 function curves(i) = curves[i];
- 
+function all_curves() = curves;
+function curve_named(s) = find(s,curves);
+
+function curve_name(c) = c[0];
+function curve_axiom(c) = c[1];
+function curve_rules(c) = c[2];
+function curve_angle(c) = c[3];
+function curve_forward(c) = c[4];
+
 module index() { 
   for (i=[0:len( curves)-1])
     echo(i,curves[i][0]); 
