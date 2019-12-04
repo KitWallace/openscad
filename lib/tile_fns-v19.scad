@@ -131,12 +131,22 @@ function lshift(l,shift=0) = shift(l,shift);
 function rshift(l,shift=0) = 
    [for (i=[0:len(l)-1]) l[(i - shift + len(l))%len(l)]];  
 
+/*
 function l_sum_r(l,n,k) =
       k < n ?  l[k] + l_sum_r(l,n,k+1) : zero(l[0]) ;
 
 function l_sum(l) = l_sum_r(l,len(l),0);
 // function v_sum(v,n) = v_sum_r(v,n,0);
+*/
 
+function l_sum1(l, i = 0, a = 0) =
+   i >= len(l) 
+      ? a 
+      : l_sum1(l, i + 1, a + l[i])
+   ;
+
+function l_sum(l) =
+     l_sum1(l,0,zero(l[0]));
 function l_min_r(l,m,i) =
      i < len(l)-1
         ? l[i] < m
@@ -703,26 +713,25 @@ function tesselate_tiles_offset(tiles,n,m,dx,dy) =
           translate_points(t,trans)
       ]
     ];
-
-
-                    
+               
 // add tests for tile overlap 
            
-// to convert a group to a single tile
-   
- function eq(a,b,tol=0.000001) =
-      norm(a - b) <= tol;
+// to convert a set of tiles to a single tile
+// only works on edge-to-edge configurations
+      
+ function eq(a,b,eps=0.00001) =
+      norm(a - b) <= eps;
             
  function equal_edge(e1,e2) =
      eq(e1[0],e2[0]) && eq(e1[1], e2[1])
     ||  eq(e1[0],e2[1]) && eq(e1[1], e2[0])     ; 
 
 //get all edges in a group
-function group_edges(g) =
+function group_edges(tiles) =
     let(edges = flatten(
-         [for (p = g)
-            [for (i =[0:len(p)-1])
-                [p[i],p[(i+1)%len(p)]]
+         [for (tile = tiles)
+            [for (i =[0:len(tile)-1])
+                [tile[i],tile[(i+1)%len(tile)]]
             ]
          ]))
     edges;
@@ -759,13 +768,13 @@ function edges_to_points(edges) =
    [for (e = edges) e[1]];
 
 // simplify perimeter 
-   // if abs(step.angle) =180 then carry distance.
+   // if abs(step.angle - 180) < eps  then carry distance.
    // if not add carry to distance and output step
    
-function simplify(steps,i=0,carry=0) =
+function simplify(steps,i=0,carry=0,eps=0.0001) =
      i < len(steps)
      ? let (s = steps[i])
-       abs(s[1]) == 180
+       abs(s[1]-180) < eps  // colinear
          ?  simplify (steps, i+1,carry+ s[0])
          :  concat([[s[0]+carry,s[1]]],
              simplify (steps, i+1,0))
@@ -788,6 +797,33 @@ function tiles_to_tile(tiles) =
     let (peri = simplify(tile_to_peri(points)))
     peri_to_tile(peri);
 
+
+// to crop tiles to a bounding box 
+
+function point_in_box(p,box)=
+       p.x >= box[0].x
+    && p.x <= box[1].x
+    && p.y >= box[0].y
+    && p.y <= box[1].y
+    ;
+function points_in_box(points,box,i=0) =
+   i< len(points)
+    ? let(p=points[i])
+      point_in_box(p,box)
+       ? points_in_box(points,box,i+1)
+       : false
+    : true;
+    
+function crop_tiles(tiles,box) =
+   [for (t=tiles)
+       if(points_in_box(t,box)) t
+   ];
+       
+function crop_groups(groups,box) =
+   [for (group = groups)       
+       if(points_in_box(flatten(group),box)) group
+   ];
+       
 // tile to objects  
   
 module fill_tile(tile,col="red") {
@@ -869,4 +905,3 @@ module repeat_tile(n,m,dx,dy) {
                children();
       }
 }
-
