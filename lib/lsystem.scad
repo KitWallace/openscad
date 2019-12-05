@@ -106,7 +106,7 @@ curves =
    ],
    90],
 
-   ["Dragon curve -simpler form",
+   ["Dragon curve - simpler form",
      "F",
     [["F", "F-A"],["A","F+A"]],
      90,
@@ -164,10 +164,10 @@ curves =
        ["X","-YF+XFX+FY-"],
        ["Y","+XF-YFY-FX+"]
      ],
-     90,
-     3],
+     90
+     ],
      
-   ["Peano-Gosper;FlowSnake",
+   ["FlowSnake",
       "A",
      [
        ["A","A-B--B+A++AA+B-"],
@@ -190,7 +190,7 @@ curves =
          [["X", "XF+F+XF--F--XF+F+X"]],
          45],
          
-   ["Sierpinski Arrowhead, Sierpinksi Gasket",
+   ["Sierpinski Arrowhead",
      "A",
      [
        ["A", "B-A-B"],
@@ -249,7 +249,7 @@ curves =
     90
     ],
       
-    ["Square Koch",
+    ["Koch square",
        "F--F--F--F--",
        [["F","F+F--F+F"]],
        45],
@@ -313,7 +313,7 @@ curves =
        
        90],
      
-    ["Anklets of Krishna, Anticross-stitch curve",
+    ["Anklets of Krishna",
         "-X--X",
         [["X","XFX--XFX"]],
         45   //45.02 splits it down a diagonal
