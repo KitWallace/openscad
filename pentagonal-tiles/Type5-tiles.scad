@@ -12,7 +12,7 @@ use <../lib/tile_fns-v19.scad>
    parameters  d, E 
    
    typical values d=0.6; E=105
-   floret  d=0.5; E=105
+   floret  d=0.5; E=120
 
 */
 
