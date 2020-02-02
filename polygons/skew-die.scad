@@ -21,13 +21,13 @@ pip_size=5;
 //pip spacing
 pip_spacing=10;
 //pip resolution 
-pip_resolution=15;
+pip_resolution=5;
 //pip alignment - angle of alignment within face 
 pip_alignment=50;
 //corner radius
-radius =5;
+corner_radius =5;
 // corner resolution
-corner_resolution = 15;
+corner_resolution = 5;
 
 function end() = "end";
 
@@ -49,7 +49,6 @@ p5= m2 * p4;
 p6 = [0,0,z];
 p7 = [0,0,-z];
 unit_vertices = [p0,p1,p2,p3,p4,p5,p6,p7];
-vertices = [for (v=unit_vertices) v* scale];
 
 // faces 2 and 3 reversed to get all faces with the same orientation
 // faces reordered so face[i] has i+1 pips
@@ -71,9 +70,9 @@ pips = [
          [[-1,1],[1,1],[1,-1],[-1,-1],[0,1],[0,-1]]
        ];
 
-
-placed = place(vertices,faces,0);     
-dice(placed[0],placed[1],radius,pip_size,pip_spacing,pip_alignment) ;
+vertices = [for (v=unit_vertices) v* scale];
+placed_vertices = place(vertices,faces,0);   
+dice(placed_vertices,faces,corner_radius,pip_size,pip_spacing,pip_alignment) ;
 
 
 module dice(vertices,faces,radius,size,spacing,alignment) {
@@ -123,9 +122,7 @@ function place(vertices,faces,f) =
    let (points =[for (v=face) vertices[v]])
    let (n = normal(points), c=centroid(points))
    let (m=m_from(c,-n))
-   let (vstar=[for (v=vertices) 
-                 m_transform(v, m) ])
-   [vstar,faces];
+   [for (v=vertices) m_transform(v, m) ];
 
 function m_from(centre,normal) = 
       m_translate(-centre)
