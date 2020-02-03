@@ -70,10 +70,9 @@ pips = [
          [[-1,1],[1,1],[1,-1],[-1,-1],[0,1],[0,-1]]
        ];
 
-vertices = [for (v=unit_vertices) v* scale];
+vertices = [for (v=unit_vertices) v * scale];
 placed_vertices = place(vertices,faces,0);   
 dice(placed_vertices,faces,corner_radius,pip_size,pip_spacing,pip_alignment) ;
-
 
 module dice(vertices,faces,radius,size,spacing,alignment) {
    difference() {
@@ -83,10 +82,9 @@ module dice(vertices,faces,radius,size,spacing,alignment) {
              for (v = vertices) translate(v) sphere(radius,          $fn=corner_resolution);
 
        for (i =[0:len(faces)-1])  {
-           face=faces[i];
-           facep = [for (p = face) vertices[p]];
-           center=centroid(facep);
-           normal=normal(facep);
+           face = [for (p = faces[i]) vertices[p]];
+           center=centroid(face);
+           normal=normal(face);
            orient_to(center,normal) 
                for(place = pips[i]) 
                    rotate([0,0,alignment])
@@ -117,7 +115,7 @@ module orient_to(centre, normal) {
 }
 
 function place(vertices,faces,f) =
-// place on nomated face or largest face for printing
+// place on nominated face for printing
    let (face= faces[f])
    let (points =[for (v=face) vertices[v]])
    let (n = normal(points), c=centroid(points))
