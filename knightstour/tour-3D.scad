@@ -10,8 +10,6 @@ N=8;
 M=8;
 // board Z size
 P=8;
-// closed -  if 1 last move goes to initial position - Ok if a tour was found but looks odd if tour was not complete
-closed=1;
 // start X
 i=0;
 // start Y
@@ -128,7 +126,7 @@ echo(len(kt));
 $fn=fn;
 
 scale(scale)
-for (i=[0:len(kt)-2+closed]) {
+for (i=[0:len(kt)-2]) {
     m=kt[i];
     n=kt[(i+1)%len(kt)];
     k= i/full_tour;
