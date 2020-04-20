@@ -127,7 +127,7 @@ module tour_3d(kt, closed) {
     for (i=[0:len(kt)-2+final]) {
     m=kt[i];
     n=kt[(i+1)%len(kt)];
-    k= i/full_tour;
+    k= i/len(kt);
     color([k,1-k,1,1])
       hull() {
         translate(m) sphere(thickness/2);
@@ -154,8 +154,7 @@ Increments = increments();
 
 initial_board= zero_board(N,M,P);
 // echo(board_moves(initial_board));  
-full_tour=N*M*P;
-//echo(full_tour);
+
 mi=[i,j,k];
 kt=tour(mi,initial_board);
 echo(len(kt));
