@@ -160,6 +160,8 @@ module tour_2D(kt,closed) {
  for (i=[0:len(kt)-2+final]) {
     m=kt[i];
     n=kt[(i+1)%len(kt)];
+     k= i/len(kt);
+    color([k,1-k,1,1])
     hull() {
         translate([m.x,m.y,0]) cylinder(h=wall_height(180*i/len(kt),closed),d=thickness);
         translate([n.x,n.y,0]) cylinder(h=wall_height(180*(i+1)/len(kt),closed),d=thickness);
