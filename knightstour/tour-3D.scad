@@ -11,11 +11,11 @@ M=8;
 // board Z size
 P=8;
 // start X
-i=0;
+i=4;
 // start Y
-j=0;
+j=5;
 //start k
-k=0;
+k=5;
 
 //wall thickness
 thickness=0.2;
@@ -101,6 +101,15 @@ function make_move(m,board) =
          ]
      ];
 
+function is_closed(kt) =
+// first square is a knights move from the last square
+   let(start=kt[0])
+   let(end=kt[len(kt)-1])   
+   let(mk=km(end))
+   [for (m = mk)
+      if( m==start) 1
+   ][0]==1;    
+      
 function tour(m,board) =
    tour1(m,make_move(m,board),[m]);
      
@@ -113,8 +122,36 @@ function tour1(m,board,moves) =
          let(best=mq[0][1])
          tour1(best,make_move(best,board),concat(moves,[best]));
 
+module tour_3d(kt, closed) {
+    final= closed ? 1 : 0;
+    for (i=[0:len(kt)-2+final]) {
+    m=kt[i];
+    n=kt[(i+1)%len(kt)];
+    k= i/full_tour;
+    color([k,1-k,1,1])
+      hull() {
+        translate(m) sphere(thickness/2);
+        translate(n) sphere(thickness/2);
+    }
+}    
+};  
+
+module all_tours(k) {
+for (i=[0:N-1]) 
+   for (j=[0:M-1]) 
+     for (k=[0:P-1]) 
+           {      
+      initial_board= zero_board(N,M,P);
+      m=[i,j,k];        
+      kt=tour(m,initial_board);
+      echo(m,"length",len(kt),"complete", len(kt)== N*M*P,"closed",is_closed(kt));
+
+      // if (is_closed(kt) && (len(kt) == N*M*P))   echo(m);
+   }
+};
 Increments = increments();
-//echo(len(Increments));        
+//echo(len(Increments));     
+
 initial_board= zero_board(N,M,P);
 // echo(board_moves(initial_board));  
 full_tour=N*M*P;
@@ -125,14 +162,4 @@ echo(len(kt));
 //echo(kt);
 $fn=fn;
 
-scale(scale)
-for (i=[0:len(kt)-2]) {
-    m=kt[i];
-    n=kt[(i+1)%len(kt)];
-    k= i/full_tour;
-    color([k,1-k,1,1])
-      hull() {
-        translate(m) sphere(thickness/2);
-        translate(n) sphere(thickness/2);
-    }
-}    
+scale(scale) tour_3d(kt,is_closed(kt));
