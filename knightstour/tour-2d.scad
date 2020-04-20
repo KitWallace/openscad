@@ -9,8 +9,6 @@
 N=8;
 // board Y size
 M=8;
-// closed -  if 1 last move goes to initial position - Ok if a tour was found but looks odd if tour was not complete
-closed=1;
 // start X
 i=0;
 // start Y
@@ -130,7 +128,7 @@ $fn=fn;
 function wall_height(i) = start_height + i * (end_height-start_height);
 
 scale(scale)
-for (i=[0:len(kt)-2+closed]) {
+for (i=[0:len(kt)-2]) {
     m=kt[i];
     n=kt[(i+1)%len(kt)];
     hull() {
