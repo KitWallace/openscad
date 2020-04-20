@@ -139,8 +139,13 @@ function tour1(m,board,moves) =
          let(best=mq[0][1])
          tour1(best,make_move(best,board),concat(moves,[best]));
 
-function wall_height(i) = start_height + i * (end_height-start_height);
+function ramp(theta) = start_height + theta/180 * (end_height-start_height);
 
+function wave(theta) = start_height+ sin(theta) * (end_height-start_height);
+  
+function wall_height(theta,closed) =
+    closed ? wave(theta) : ramp(theta);
+      
 module all_tours() {
 for (i=[0:N-1]) 
    for (j=[0:M-1]) {      
@@ -156,8 +161,8 @@ module tour_2D(kt,closed) {
     m=kt[i];
     n=kt[(i+1)%len(kt)];
     hull() {
-        translate([m.x,m.y,0]) cylinder(h=wall_height(i/len(kt)),d=thickness);
-        translate([n.x,n.y,0]) cylinder(h=wall_height((i+1)/len(kt)),d=thickness);
+        translate([m.x,m.y,0]) cylinder(h=wall_height(180*i/len(kt),closed),d=thickness);
+        translate([n.x,n.y,0]) cylinder(h=wall_height(180*(i+1)/len(kt),closed),d=thickness);
     }
  }
 };
