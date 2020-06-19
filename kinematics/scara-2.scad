@@ -30,8 +30,8 @@ function reverse_scara(r1,r2,xy) =
    let (eps = 0.00001)
    let (b =  (abs(r1+r2 -L) < eps) 
               ? 0   // degenarate case where arm 1 and arm 2 are colinear
-              : acos((r1*r1+r2*r2-L*L)/( 2*r1*r2)) - 180)
-   [[a1+a2,b],[a1-a2,-b]];
+              : 180 - acos((r1*r1+r2*r2-L*L)/( 2*r1*r2)))
+   [[a1+a2,-b],[a1-a2,b]];
 
 function increment_scara(r1,r2,current_ab,next_xy) =
   let (next_ab = reverse_scara(r1,r2,next_xy))
