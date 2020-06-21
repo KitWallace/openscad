@@ -27,16 +27,19 @@ function xy_reachable(r1,r2,xy) =
    let (L = sqrt(x*x+y*y))
    L <= (r1+r2)  && L>= abs(r1-r2)  && L >0;
    
+function SSS(a,b,c) =
+   acos((a*a + b*b - c*c)/ (2*a*b));
+   
 function xy_to_ab(r1,r2,xy) =
    let (x = xy.x)
    let (y = xy.y)
    let (L = sqrt(x*x+y*y))
    let (a1= atan2(y,x))
-   let (a2= acos((r1*r1+L*L - r2*r2)/(2*r1*L)))
+   let (a2= SSS(r1,L,r2))
    let (eps = 0.00001)
    let (b =  (abs(r1+r2 -L) < eps) 
               ? 0   // degenerate case where link 1 and link 2 are colinear
-              : 180 - acos((r1*r1+r2*r2-L*L)/( 2*r1*r2)))
+              : 180 - SSS(r1,r2,L))
    [[a1+a2,-b],[a1-a2,b]];
 
 function xy_to_ab_best(r1,r2,current_ab,next_xy) =
