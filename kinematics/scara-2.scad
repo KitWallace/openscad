@@ -200,12 +200,6 @@ module trace_star() {
 function flip_polygon(poly)=
   [for (p=poly) [-p.x,-p.y]];
       
-function poly_abs(rel,abs,i=0) =
-    i==0
-       ? poly_abs(rel,[rel[0]],i+1)
-       : i < len (rel)
-           ? poly_abs(rel,concat(abs,[abs[i-1]+rel[i]]),i+1)
-           : abs ;
     
 $fn=50;
  // scara arms
