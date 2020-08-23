@@ -1,11 +1,11 @@
 
-/* parametric asymmetric trigonal trapezohdron
+/* Skew die invented by Henry Segerman :
+      https://www.youtube.com/watch?v=OI5njPo7zC0
+
+   parametric asymmetric trigonal trapezohdron
    geometry from Matlab code by https://twitter.com/etzpcm
    Paul Matthews , Nottingham Uni 
-     
-     
-   pips are placed relative to the face
-   
+        
 */
 
 // Initial point
