@@ -21,68 +21,88 @@ scale=30;
 pip_size=3;
 //pip inset_ratio
 pip_inset_ratio=0.5;
+//pip offset from face
+pip_offset=1.5;
 //pip resolution 
-pip_resolution=10;
+pip_resolution=20;
 //corner radius
 radius =1;
 // corner resolution
 corner_resolution = 20;
 
-function end() = "end";
+// end of parameters
 
-m1= [[1,0,0], [0,-1,0], [0,0,-1]];   // 180 rotation about x axis
-t=2*180/3;
-c=cos(t);
-s=sin(t);
-m2= [ [c,s,0], [-s,c,0], [0,0,1]];   // 120 rotation about z axis
-
-p0= [x0,y0,z0];  
+function att(x0,y0,z0,scale) =
+   let(m1= [[1,0,0], [0,-1,0], [0,0,-1]],   // 180 rotation about x axis
+      t=2*180/3,
+      c=cos(t),
+      s=sin(t),
+      m2= [ [c,s,0], [-s,c,0], [0,0,1]],   // 120 rotation about z axis
+      p0= [x0,y0,z0],  
 //Ensure 4 face points are coplanar 
-z = z0*(-s*x0+(c-1)*y0)*x0/((c-1)*x0+s*y0)/y0;
-
-p1= m2 * p0;
-p2= m2 * p1;
-p3= m1 * p0;
-p4= m2 * p3;
-p5= m2 * p4;
-p6 = [0,0,z];
-p7 = [0,0,-z];
-unit_vertices = [p0,p1,p2,p3,p4,p5,p6,p7];
-vertices = [for (v=unit_vertices) v* scale];
+      z = z0*(-s*x0+(c-1)*y0)*x0/((c-1)*x0+s*y0)/y0,
+      p1= m2 * p0,
+      p2= m2 * p1,
+      p3= m1 * p0,
+      p4= m2 * p3,
+      p5= m2 * p4,
+      p6 = [0,0,z],
+      p7 = [0,0,-z],
+      unit_vertices = [p0,p1,p2,p3,p4,p5,p6,p7],
+      vertices = [for (v=unit_vertices) v* scale],
    
-// faces 2 and 3 reversed to get all faces with the same orientation
+// faces 2 and 3 reversed fro mMathews to get all faces with the same orientation
 // faces reordered so face[i] has i+1 pips 
 
-faces = [[0,3,1,6], 
+     faces = 
+       [[0,3,1,6], 
          [5,7,3,0],  
          [2,5,0,6],  
          [1,3,7,4], 
          [4,2,6,1], 
          [4,7,5,2], 
-        ];
+        ])
+      [vertices,faces];
 
-pips=[[0],[1,3],[1,0,3],[1,2,3,4],[0,1,2,3,4],[1,2,3,4,5,7]];
+obj=att(x0,y0,z0,scale);
+vertices=obj[0];
+faces=obj[1];
+      
+difference() {
+    solid(vertices,faces,radius,corner_resolution);
+    pips(vertices,faces,pip_size,pip_inset_ratio,pip_offset,pip_resolution) ;
+}
 
-dice(vertices,faces,radius,pip_size,pip_inset_ratio) ;
+module solid(vertices,faces,radius,corner_resolution) {
+     if(radius==0)
+         polyhedron(vertices,faces);
+     else hull() 
+        for (v=vertices) 
+           translate(v) 
+             sphere(radius,$fn=corner_resolution);
+ };
+ 
+module pips(vertices,faces,pip_size,pip_inset_ratio,pip_offset, pip_resolution) {   
+    pips=[[0],[1,3],[1,0,3],[1,2,3,4],[0,1,2,3,4],[1,2,3,4,5,7]];
 
-module dice(vertices,faces,radius,size,r) {
-      difference() {
-       if(radius==0)
-           polyhedron(vertices,faces);
-       else hull() 
-           for (v = vertices) translate(v) sphere(radius,$fn=corner_resolution);
-
-       for (i =[0:len(faces)-1])  {
+    for (i =[0:len(faces)-1])  {
            face=faces[i];
            facep = face(vertices,face);
-           pips_p = pip_points(facep,r);
+           norm = normal(facep);
+           pips_p = pip_points(facep,pip_inset_ratio);
            face_pips = pips[i];
            for (j=face_pips)
-               translate(pips_p[j])
-                 sphere(size,$fn=pip_resolution);         
+              translate(norm*pip_offset)
+                 translate(pips_p[j])
+                   sphere(pip_size,$fn=pip_resolution);         
      }
-   }
- };
+};
+ 
+function orthogonal(v0,v1,v2) =  cross(v1-v0,v2-v1);
+
+function normal(face) =
+     let (n=orthogonal(face[0],face[1],face[2]))
+     - n / norm(n);
  
 function centroid(points) = 
       vsum(points) / len(points);
