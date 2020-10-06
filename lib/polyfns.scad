@@ -17,7 +17,22 @@ function transform_points(points, matrix) =
     [for (p=points) m_transform(p, matrix) ] ;
    
 // vertex functions
-    
+
+function vertex_ids(entries,offset=0,i=0) = 
+// to get position of new vertices 
+    len(entries) > 0
+          ?[for (i=[0:len(entries)-1]) 
+             [entries[i][0] ,i+offset]
+           ]
+          :[]
+          ;
+   
+function vertex_values(entries)= 
+    [for (e = entries) e[1]];
+ 
+function vertex(key,entries) =   // key is an array 
+    entries[search([key],entries)[0]][1];
+       
 function vertex_faces(v,faces) =   // return the faces containing v
      [ for (f=faces) if(v!=[] && search(v,f)) f ];
     
@@ -290,6 +305,9 @@ function p_description(obj) =
          " ",str(len(p_non_planar_faces(obj))," not planar"),
           ", ",str(len(p_edges(obj))," Edges ")
      ); 
+
+function p_face_as_points(face,obj) =
+     as_points(face,p_vertices(obj));
      
 function p_faces_as_points(obj) =
     [for (f = p_faces(obj))
@@ -422,7 +440,7 @@ function p_circumscribed_resize(obj,radius=1) =
 function p_resize(obj,radius=1) =
     p_circumscribed_resize(obj,radius);
 
-function transform(obj,matrix) =
+function p_transform(obj,matrix) =
    poly(
        name=str("X",p_name(obj)),
        vertices=transform_points(p_vertices(obj),matrix),
@@ -434,7 +452,7 @@ function place(obj,f) =
    let (points =as_points(face,p_vertices(obj)))
    let (n = normal(points), c=centroid(points))
    let (m=m_from(c,-n))
-   transform(obj,m)
+   p_transform(obj,m)
 ;
 
 function orient(obj) =
@@ -603,7 +621,10 @@ function inset(obj,r=0.3, h=-0.1, fn=[]) =
        faces= newf
        )
 ; // end inset
- 
+                  
+function p_rotate_to(obj,n) =
+     p_transform(obj,m_from([0,0,0],-n));
+                  
 module p_render_text(obj,texts,font,depth,offset,size) {
     
 /*
@@ -667,7 +688,7 @@ function modulate(obj) =
 ;  // end modulate
 
 function scale(obj,s)=
-   transform(obj,m_scale(s)) ;
+   p_transform(obj,m_scale(s)) ;
 
 // object trimming
 
