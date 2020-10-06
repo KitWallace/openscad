@@ -1,7 +1,7 @@
 // basic list comprehension functions
 
 function depth(a) =
-   len(a)== undef 
+   a[0]== undef 
        ? 0
        : 1+depth(a[0]);
         
@@ -16,7 +16,10 @@ function reverse(l) =
 
 function shift(l,shift=0) = 
      [for (i=[0:len(l)-1]) l[(i + shift)%len(l)]];  
-         
+ 
+function slice(list,k) =
+    [for (e = list) e[k]];
+  
 //  functions for creating the matrices for transforming a single point
 
 function m_translate(v) = [ [1, 0, 0, 0],
@@ -128,8 +131,6 @@ function index_of(key, list) =
 function value_of(key, list) =
       list[search([key],list)[0]][1]  ;
 
-function slice(l,d,i=0) =
-     i < len(l) ?  concat([l[i][d]], slice(l,d,i+1) ) : [] ;
 
 function orthogonal(v0,v1,v2) =  cross(v1-v0,v2-v1);
 
