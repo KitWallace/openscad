@@ -1,6 +1,4 @@
 // functions to generate a net from a polyhedron
-// requires conway.scad
-// queue functions 
 
 include <polyfns.scad>
 include <basics.scad>
@@ -86,7 +84,7 @@ function p_create_net(obj) =
           points=p_vertices(obj),
           kv_faces = quicksort_kv(
                [for (i=[0:len(faces)-1])
-                     [face_area(as_points(faces[i],points)),i]
+                    [face_area(as_points(faces[i],points)),i]
                ]), 
           start = head(kv_faces)[1],
           queue= [[start,0]],  
@@ -111,16 +109,18 @@ function create_net(faces,points,queue,included,net,i=0) =
                    ])
 //             true ? adjacent_face_edges :    
              len(new_face_edges) > 0 
-                 ? let (keyed_face_edges = 
+                 ? let (
+                       keyed_face_edges = 
                          [ for (i=[0:len(new_face_edges)-1])
                            let(fe=new_face_edges[i])
-                           [face_area(as_points(faces[[fe[1]]],points)),fe]],
+ //                         [face_area(as_points(faces[[fe[1]]],points)),fe]],
+                             [1,fe]],
                        sorted_face_edges=
                            [ for (kfe=quicksort_kv(keyed_face_edges))
                              kfe[1]
                            ],                        
                         adjacent_faces= 
-                            [for (fe = sorted_face_edges) fe[1]],
+                            [for (fe = sorted_face_edges) fe[1]],                    
                         includedx = flatten(concat(included, adjacent_faces)),
                         queuex=enque(deque(queue), 
                                [for (fe=sorted_face_edges) [[fe[1],fe[2]]]]),
