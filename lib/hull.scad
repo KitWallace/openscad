@@ -1,5 +1,5 @@
 // list operations
-eps=0.01;
+eps=0.0001;
 
 function flatten(l) = [ for (a = l) for (b = a) b ] ;
 
@@ -20,7 +20,7 @@ function _remove(list,entry) =
 function _remove_all(list,entries,pos=0) =
    pos >= len(entries)
      ? list
-     : _remove_all(_remove(list,entries[pos]),entries,pos=pos+1)
+     : _remove_all(_remove(list,entries[pos]),entries,pos+1)
    ; 
         
 // basic geometry tests          
@@ -31,7 +31,7 @@ function _firstnoncollinear(list,point1,point2,pos=0) =
         ? undef 
         : ! _isCollinear(point1,point2,list[pos]) 
            ? pos 
-           : _firstnoncollinear(list,point1,point2,pos=pos+1);
+           : _firstnoncollinear(list,point1,point2,pos+1);
                 
 function _isCoplanar(a,b,c,d) = abs((d-a)*cross(b-a,c-a)) < eps;
 
@@ -40,7 +40,7 @@ function _firstnoncoplanar(list,point1,point2,point3,pos=0) =
         ? undef 
         : ! _isCoplanar(point1,point2,point3,list[pos]) 
            ? pos : 
-           _firstnoncoplanar(list,point1,point2,point3,pos=pos+1);
+           _firstnoncoplanar(list,point1,point2,point3,pos+1);
 
 // orientation tests        
 function _sameSide(p1,p2, a,b) = 
@@ -98,7 +98,7 @@ function _initialTri(list) =
     let(a=list[0],
         b=list[1],
         rest=_subseq(list,2),
-        ci=_firstnoncollinear(rest,a,b,2),        
+        ci=_firstnoncollinear(rest,a,b),        
         c=assert(ci != undef) rest[ci],
         rlist=_delete(rest,ci))
         [[a,b,c],rlist];
@@ -118,7 +118,7 @@ function _triangle_edges(triangle) =
      [triangle[2],triangle[0]]
     ];
 
-function _equal_edges(a,b) = norm(a-b) < eps;
+function _equal_edges(a,b) = a==b;
 
 function _triangle_has_edge(triangle,edge) =
      let (edges = _triangle_edges(triangle))
@@ -132,7 +132,7 @@ function _outerEdges(triangles) =
       
 function _unlit(triangles, p) = 
     [for(t=triangles) 
-         if(_isBoundedBy(p, t) >= 0) t];
+         if(_isBoundedBy(p, t) >= eps) t];
         
 function _addToHull(hull, p) = 
     let(unlit = _unlit(hull,p),
@@ -158,15 +158,11 @@ function _makePointsAndFaces(triangles) =
 function pointHull(points) =
     _makePointsAndFaces(pointHull3D(points));
 
-module triangulatedHull(points) {
-    hull = pointHull3D(points);
-    echo(hull);
-    poly= _makePointsAndFaces(hull);
-    echo("vertices",len(poly[0]),poly[0]);
-    echo("faces",len(poly[1]),poly[1]);
-    polyhedron(points=poly[0],faces=poly[1]);   
-}
-
+function triangulatedHull(points) =
+    let (hull = pointHull3D(points))
+    _makePointsAndFaces(hull);
+    
+    
 // unite triangular faces to create polygonal faces 
 
 function _tri_minus_edge(tri,edge)  =
@@ -229,23 +225,8 @@ function triangles_to_face (tris) =
 function tris_to_faces(tris) =
     [for (t=tris) triangles_to_face(t)];
         
-module facedHull(points,name="solid") {
-    tris = pointHull3D(points);
-    grouped_tris= make_poly(tris);
-//    echo(grouped_tris);
-    faces= tris_to_faces(grouped_tris);
-//    echo(faces);
-    poly= _makePointsAndFaces(faces);
-    echo([name,poly[0],poly[1]]);
-    polyhedron(points=poly[0],faces=poly[1]);   
-}
-
-// extras
-        
-module showHull(pts) {
-     hull()
-      for (p = pts) 
-          translate(p)
-             sphere(r=0.01);
- 
-};
+function facedHull(points) =
+    let (tris = pointHull3D(points))
+    let (grouped_tris= make_poly(tris))
+    let (faces= tris_to_faces(grouped_tris))
+    _makePointsAndFaces(faces);
