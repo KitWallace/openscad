@@ -1,4 +1,4 @@
-// ===== Start irregular-die.scad ================================================================================
+// ===== Start irregular-quad-cube.scad ================================================================================
 // include <../lib/basics.scad>
 // ===== Start ../lib/polyfns.scad =====================================================================================
 // points functions
@@ -1395,7 +1395,44 @@ function pip_points(face,r) =
      [for (i=[0:len(face)-1])
          between(corners[i],corners[(i + 1) % len(face)],0.5)])
   flatten([[p0],corners,edges]);
+
+function secant(xn,xn1,P,eps=0.001,smax=200,step=0) =
+     let(fxn=f(xn,P))
+     let(fxn1=f(xn1,P))
+     let(x = xn - fxn*(xn - xn1)/ (fxn - fxn1))
+     abs(f(x,P) - fxn) < eps
+        ? x
+        : step < smax
+           ? secant(x,xn,P,eps,smax,step+1)
+           : undef;     
+
+function f(x,P) =
+     let(miller  = distort(cube,[P[0],0,0],[x,20,20,20,20,20]))
+     let(pts = miller_to_points(miller))
+     let(poly= points_to_poly ("unfair",pts))
+     let(fa=face_areas(poly))
+     let(e = fa[5]-fa[1])
+     e;
      
+function secant2(xn,xn1,P,eps=0.001,smax=200,step=0) =
+     let(fxn=g(xn,P))
+     let(fxn1=g(xn1,P))
+     let(x = xn - fxn*(xn - xn1)/ (fxn - fxn1))
+     abs(g(x,P) - fxn) < eps
+        ? x
+        : step < smax
+           ? secant2(x,xn,P,eps,smax,step+1)
+           : undef;     
+
+function g(x,P) =
+     let(k=secant(P[1],P[2],[x]))
+     let(miller  = distort(cube,[x,0,0],[k,20,20,20,20,20]))
+     let(pts = miller_to_points(miller))
+     let(poly= points_to_poly ("unfair",pts))
+     let(fa=face_areas(poly))
+     let(e = (100* fa[0]/fa[1])-P[0])
+     e;
+
 
 cube=[
 [1,0,0],
@@ -1406,12 +1443,15 @@ cube=[
 [0,0,-1]
 ];
 
-
-function distort(miller,r,d) =
- [for (m=miller)
-     let (rv=rands(-r,r,3))
-     [m+rv,d]
+function distort(miller,rv,d) =
+ [for (i=[0:len(miller)-1])
+     let (m=miller[i])
+     let(k=d[i])
+     [m+rv,k]
  ];
+
+
+
  
 // scale 
 scale=30;
@@ -1424,28 +1464,34 @@ pip_offset=1.5;
 //pip resolution 
 pip_resolution=20;
 //corner radius
-radius =2;
+radius =1.5;
 // corner resolution
 corner_resolution = 20;
  
- 
-// main
+// percentage area of the one side
+side_pc=90;
 
-miller = distort(cube,0.1,20);
+
+// main
+d=secant2(0.0,0.1,[side_pc,20,25]);
+k=secant(20,25,[d]);
+echo(k);
+   
+miller = distort(cube,[d,0,0],[k,20,20,20,20,20]);
 echo(miller);
  
 pts = miller_to_points(miller);
-// echo(pts);
-
+echo(pts);
 poly= place(points_to_poly ("unfair",pts));
 vertices=poly[1];
 faces=poly[2];
 
 difference() {
    solid(vertices,faces,radius,corner_resolution);
-   pips(vertices,faces,pip_size,pip_inset_ratio,pip_offset,pip_resolution) ;
+  pips(vertices,faces,pip_size,pip_inset_ratio,pip_offset,pip_resolution) ;
 }
 
 fa=face_areas(poly);
-echo([for (f=fa)  100* f/fa[0]]);
-// ===== End irregular-die.scad ==================================================================================
+echo(d,k,[for (f=fa)  100* f/fa[5]]);
+
+// ===== End irregular-quad-cube.scad ==================================================================================
