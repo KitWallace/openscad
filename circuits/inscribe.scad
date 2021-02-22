@@ -4,7 +4,7 @@ use <../lib/conway.scad>
 
 
 /*
-  given a slid and a sequecne of faces
+  given a polyhedron  and a sequenee of  connected faces
    for each face 
     get adjacent faces in the cycle
     get its commn edges
@@ -14,8 +14,9 @@ use <../lib/conway.scad>
     inset the arc nrmal to the face to make a captive channel
     subtract these tubes from the solid
     
-   assumes edges are connceted  - need to handle non-adjacent edges  
-
+    need to check fr connectedness and closedness
+    concatenate paths, reversing path if necesaary
+    
 */
 
 function face_edges(face) =
@@ -35,73 +36,76 @@ function common(list1,list2) =
            edges2 = face_edges(reverse(face2)))
       common(edges1,edges2);
  
- function arc(cycle,k,faces,vertices) =
+ function face_path(cycle,k,faces,vertices,inset,delta) =
       let (face=faces[cycle[k]],
            face0=faces[cycle[(k-1+len(cycle))%len(cycle)]],
            face1=faces[cycle[(k+1)%len(cycle)]],
            e0 = common_edge(face,face0),
            e1= common_edge(face,face1),
-           c = common(e0,e1)[0],
+           c = common(e0,e1)[0])
+           c != undef   // adjacent edges
+       ? let( 
            p0= e0[0]== c ? e0[1] : e0[0],
            p1= e1[0]== c ? e1[1] : e1[0],
            vc=vertices[c],
            v0=vertices[p0],
            v1=vertices[p1],
-           a=angle_between (v1-vc, v0-vc),
            v02= (vc+v0)/2,
            v12= (vc+v1)/2,
-           normal=normal(as_points(face,vertices))
-           
+           normal=normal(as_points(face,vertices))     
           )
-      [vc,v02,v12,normal]
-           ;
-           
+           [for (t=[0:delta:1])
+              arc_point(vc,v02,v12,t) - normal * inset
+           ]
+       :  let (
+             e0v=  as_points(e0,vertices),
+             e1v = as_points(e1,vertices),
+             v02= (e0v[0]+e0v[1])/2,
+             v12= (e1v[0]+e1v[1])/2,
+             normal=normal(as_points(face,vertices)))
+            [for (t=[0:delta:1])
+              t*v02 +(1-t)* v12 - normal * inset
+            ]
+       ;
+                       
 function arc_point(c,v0,v1,t) =
    let( p= v0* t + v1 * (1 - t),
-        r1=norm(v0-c),
-        r2=norm(v1-c),
-        r= r1*t + r2*(1-t))
-        c + unitv(p-c)*r
-        ;
-module make_arc(arc,r,inset=0.02,delta=0.01) {
-    c=arc[0];
-    v0=arc[1];
-    v1=arc[2];
-    n=arc[3];
-    translate(n*inset)
-      for (t=[0:delta:1-delta]) 
+        r0=norm(v0-c),
+        r1=norm(v1-c),
+        r= r0* t + r1 * (1-t))
+        c + unitv(p-c)*r ;
+        
+module make_tube(path,r) {
+    for (i=[0:len(path) - 2]) 
       hull() {
-         translate(arc_point(c,v0,v1,t)) sphere(r);  
-         translate(arc_point(c,v0,v1,t+delta)) sphere(r);  
+         translate(path[i]) sphere(r);  
+         translate(path[(i+1)]) sphere(r);  
      }  
  }
          
 module cycle_path(cycle,faces,vertices,r,inset,delta) {
         for (i=[0:len(cycle)-1]) {
-            arc= arc(cycle,i,faces,vertices);
-            make_arc(arc,r,inset,delta);
+            path= face_path(cycle,i,faces,vertices,inset,delta);
+//            echo(path);
+            make_tube(path,r);
         }   
 };
 
+function numbers(n) =
+   [for (i=[0:n-1]) str(i)];
+       
 solid=C();
              
 faces = p_faces(solid);
 vertices = p_vertices (solid);
  
-cycle= [0,1,4,3,5,2]; 
-$fn=20;
-r=0.15;
-inset=0.01;
+$fn=10;
+r=0.1;
+inset=0;
 delta=0.1;
 
-
-*echo(arc(cycle,1,faces,vertices) );
-
-
-*cycle_path(cycle,faces,vertices,r,inset,delta); 
-
-difference ()  {
-    show_solid(solid);
-    cycle_path(cycle,faces,vertices,r,inset,delta);  
-}    
+difference() {
+   p_render_text(solid,numbers(6),"Georgia",0.8,4,0.03);
+   cycle_path([0,1,4,3,5,2],faces,vertices,r,inset,delta);  
+}
   
