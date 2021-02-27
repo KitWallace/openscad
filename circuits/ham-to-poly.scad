@@ -1,4 +1,4 @@
-use <../lib/basics.scad>
+huse <../lib/basics.scad>
 use <../lib/poly.scad>
 use <solid.scad>
 
@@ -6,15 +6,13 @@ use <solid.scad>
   given a polyhedron (defined in solid.scad)  and a circuit as sequence of face indexes
   
   construct a path : 
-    given a face and an edge of that face:
-    chose an un-visited adjacent face   (or any other connected face)
-    get the common edge
+    for each face in the circuit
+    get the previous and next faces
+    get the common edges between the previous face and the next face
     get the intersection of the two edges  C
     get the two edge midpoints  V0,V1
     interpolate in increments to compute the points on an arc centered on C between V0 and V1  (or a straight line if edges are parallel)
-    get the other face of this edge and continue with the edge now reversed
-    stop when no more faces unvisited -  success if curculit is complete
-  
+    
   construct a cut by following the path and construct a sequence of pyramids form the centre to the path
   
   construct a tube by constructing a chain of spheres along the path.
