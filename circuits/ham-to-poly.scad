@@ -1,4 +1,4 @@
-huse <../lib/basics.scad>
+use <../lib/basics.scad>
 use <../lib/poly.scad>
 use <solid.scad>
 
