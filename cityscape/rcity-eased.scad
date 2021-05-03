@@ -3,22 +3,18 @@ function random_binary(n,threshold) =
      r < threshold ? 0 : 1
   ];
   
- function cumulative_vector(v,vc=[],i=0) =
+function cumulative_vector(v,vc=[],i=0) =
     i <len(v)
      ? let (ns = i==0 ? v[i] : vc[i-1]+v[i])
        cumulative_vector(v,concat(vc,ns),i+1)
      : vc;
     
- function add(v1,v2) =
-  [for (i=[0:len(v1)-1])
-       v1[i]+v2[i] 
-  ];
-
+function add(v1,v2) = v1 + v2;
 function cumulative_matrix (n,threshold,m=[],i=0) =
    i <n
       ? let (ir = random_binary(n,threshold[i]),
              cir = cumulative_vector(ir),
-             mn = i==0 ? cir : add(m[i-1],cir))
+             mn = i==0 ? cir : m[i-1]+cir)
        cumulative_matrix(n,threshold,concat(m,[mn]),i+1)
       : m;
   
@@ -29,7 +25,6 @@ module positive (m,n,d,base,vscale) {
            cube([d,d,base+vscale*m[i][j]]);
   
 }
-
 
 n=15;
 //thrshold is eased so later sequeces are closer to zero - arbitrary 
