@@ -9,7 +9,6 @@ function cumulative_vector(v,vc=[],i=0) =
        cumulative_vector(v,concat(vc,ns),i+1)
      : vc;
     
-function add(v1,v2) = v1 + v2;
 function cumulative_matrix (n,threshold,m=[],i=0) =
    i <n
       ? let (ir = random_binary(n,threshold[i]),
