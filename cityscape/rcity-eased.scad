@@ -21,14 +21,16 @@ module positive (m,n,d,base,vscale) {
  for (i=[0:n-1])
     for (j=[0:n-1])
         translate([i*d,j*d,0])
-           cube([d,d,base+vscale*m[i][j]]);
-  
+           cube([d,d,base+vscale*m[i][j]]); 
 }
 
-n=15;
-//thrshold is eased so later sequeces are closer to zero - arbitrary 
+function interpolate(t,a,b) =  // t=0.. 1
+     a + t * (b - a);
 
-threshold=[for (i=[0:n-1]) 0.85 + i/n/8]; 
+n=15;
+//threshold is interpolated so that later sequences are less random 
+
+threshold=[for (i=[0:n-1]) interpolate(i/(n-1),0.8,.98)]; 
 echo(threshold);  
 d=5; 
 vscale=2; 
