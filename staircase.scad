@@ -1,11 +1,11 @@
 module sector (a) {
     module sq() {
-      assign(r=100)
+      r=100;
       translate([0, r/2,0]) square(r,center=true);
     }
     if (a <= 180) 
         difference() {
-           child(0);
+           children(0);
            rotate([0,0, a])  sq();
            rotate([0,0, 180])  sq();
        }
@@ -28,18 +28,18 @@ module staircase_full(core_radius,step_width, step_depth,num_per_rev,num_revs, o
         translate([0,0,step_depth * (num_revs * num_per_rev + 1) ]) 
               linear_extrude(height=step_depth) 
                     sector(180) 
-                         circle(r=core_radius+step_width,h=step_depth);
+                         circle(r=core_radius+step_width);
 }
 
 module staircase(core_radius,step_width, step_depth,num_per_rev,num_revs, overlap_angle)  {
-     assign(step_angle = 360 /num_per_rev)
-     for (i = [0:num_per_rev *num_revs-1])
-           assign( angle = i * step_angle,
-                       height = i * step_depth
-           )
-             translate([0,0,height])
-         rotate(angle)
+     step_angle = 360 /num_per_rev;
+     for (i = [0:num_per_rev *num_revs-1]) {
+           angle =  i * step_angle;
+           height = i * step_depth;
+           translate([0,0,height])
+           rotate(angle)
                step(core_radius, step_width,step_angle+overlap_angle, step_depth);
+     }
 }
 
 module step(core_radius, step_width,step_angle, step_depth) {
