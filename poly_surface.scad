@@ -6,6 +6,8 @@
    The project is being documented in my blog 
      http://kitwallace.tumblr.com/tagged/openscad
   
+    2022-05-07  - corrected to ensure surface is axisymmetric for a axisymmetric function thanks to 
+       Yoshi Takeyasu 
 */
 
 function flatten(l) = 
@@ -16,82 +18,93 @@ function reverse(l) =
     [ for (i=[1:len(l)]) l[len(l)-i]];   
 
 // vertex indexes
-function vt(i,j,nx,ny) = i*nx + j;
-function vb(i,j,nx,ny) = nx*ny +i * nx + j;
-  
-function surface_vertices (minx,maxx,miny,maxy,nx,ny) = 
-// vertices 
-    concat(
-     flatten([for (i=[0:nx-1])
-        let (x= minx + (maxx-minx)*i/nx)
-        [for (j=[0:ny-1])
-            let (y= miny + (maxy-miny)*j/ny)
-            [x,y,ftop(x,y)]
-        ]
-    ]),
-    flatten([for (i=[0:nx-1])
+// vertex indexes
+function vt(i,j,nx,ny) = i*(nx+1) + j;
+function vb(i,j,nx,ny) = (nx+1)*(ny+1) +i * (nx+1) + j;
+
+function surface_vertices (minx,maxx,miny,maxy,nx,ny) =
+// vertices
+concat(
+    flatten(
+    [for (i=[0:nx])
+      let (x= minx + (maxx-minx)*i/nx)
+      [for (j=[0:ny])
+        let (y= miny + (maxy-miny)*j/ny)
+          [x,y,ftop(x,y)]
+     ]
+   ]),
+    flatten(
+    [for (i=[0:nx])
        let (x= minx + (maxx-minx)*i/nx)
-       [for (j=[0:ny-1])
-           let (y= miny + (maxy-miny)*j/ny)
-           [x,y,fbottom(x,y)]
-        ]
-    ])
-    );
-        
-function surface_faces (nx,ny) = 
+       [for (j=[0:ny])
+         let (y= miny + (maxy-miny)*j/ny)
+         [x,y,fbottom(x,y)]
+       ]
+    ]
+    )
+  )
+;
+
+function surface_faces (nx,ny) =
   concat(
-    flatten(
-      [for (i=[0:nx-2])
-        [for (j=[0:ny-2])
+   flatten(
+      [for (i=[0:nx-1])
+        [for (j=[0:ny-1])
            reverse(
-            [vt(i,j,nx,nx),
-            vt(i+1,j,nx,nx),
-            vt(i+1,j+1,nx,nx),
-            vt(i,j+1,nx,nx)]
-           )
-        ]
-     ]),
-    flatten(
-      [for (i=[0:nx-2])
-         [for (j=[0:ny-2])
-             [vb(i,j,nx,nx),
-              vb(i+1,j,nx,nx),
-              vb(i+1,j+1,nx,nx),
-              vb(i,j+1,nx,nx)
-             ]
+             [vt(i,j,nx,nx),
+              vt(i+1,j,nx,nx),
+              vt(i+1,j+1,nx,nx),
+              vt(i,j+1,nx,nx)
+            ]
+          )
+       ]
+     ]
+  ),
+  flatten(
+     [for (i=[0:nx-1])
+        [for (j=[0:ny-1])
+          [vb(i,j,nx,nx),
+           vb(i+1,j,nx,nx),
+           vb(i+1,j+1,nx,nx),
+           vb(i,j+1,nx,nx)
          ]
-       ]),
-    [for (i=[0:nx-2])
-           [vt(i,0,nx,nx),
-            vt(i+1,0,nx,nx),
-            vb(i+1,0,,nx,nx),
-            vb(i,0,,nx,nx)
-           ]
-    ],
-    [for (i=[0:nx-2])
-        reverse(
-           [vt(i,ny-1,nx,nx),
-            vt(i+1,ny-1,nx,nx),
-            vb(i+1,ny-1,nx,nx),
-            vb(i,ny-1,nx,nx)
-           ])
-    ],
-    [for (j=[0:ny-2])
-       reverse(
-         [vt(0,j,nx,nx),
-         vt(0,j+1,nx,nx),
-         vb(0,j+1,nx,nx),
-         vb(0,j,nx,nx)])
-    ],
-     [for (j=[0:ny-2])
-        [vt(nx-1,j,nx,nx),
-         vt(nx-1,j+1,nx,nx),
-         vb(nx-1,j+1,nx,nx),
-         vb(nx-1,j,nx,nx)]
-       ]   
-    );
-
-
+       ]
+    ]
+   ),
+   [for (i=[0:nx-1])
+      [vt(i,0,nx,nx),
+       vt(i+1,0,nx,nx),
+       vb(i+1,0,,nx,nx),
+       vb(i,0,,nx,nx)
+      ]
+   ],
+   [for (i=[0:nx-1])
+     reverse(
+        [vt(i,ny,nx,nx),
+         vt(i+1,ny,nx,nx),
+         vb(i+1,ny,nx,nx),
+         vb(i,ny,nx,nx)
+        ]
+     )
+   ],
+   [for (j=[0:ny-1])
+     reverse(
+       [vt(0,j,nx,nx),
+        vt(0,j+1,nx,nx),
+        vb(0,j+1,nx,nx),
+        vb(0,j,nx,nx)
+       ]
+     )
+   ],
+   [for (j=[0:ny-1])
+     [vt(nx,j,nx,nx),
+      vt(nx,j+1,nx,nx),
+      vb(nx,j+1,nx,nx),
+      vb(nx,j,nx,nx)
+     ]
+   ]
+  )
+;
 module poly_surface (minx,maxx,miny,maxy,nx,ny) {
 // uses ftop() and fbottom()  to computer surface heights 
    sv=surface_vertices(minx,maxx,miny,maxy,nx,ny);   
