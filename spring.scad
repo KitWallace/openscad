@@ -111,7 +111,7 @@ function reverse(v) = reverse_r(v, len(v)-1);
 
 
 function circle_points(r = 1, a = 0) = 
-    a < 360
+    a <= 360
        ? concat([[r * sin(a),  r * cos(a),0]], circle_points(r, a + 360 / $fn)) 
        : [] ;
 
